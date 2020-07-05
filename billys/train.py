@@ -111,3 +111,6 @@ class Step(Enum):
 
     def __ne__(self, other):
         return not (self == other)
+
+    def __int__(self):
+        return self.value
