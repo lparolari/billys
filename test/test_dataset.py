@@ -6,7 +6,7 @@ import os
 import unittest
 from pickle import load
 
-from billys.dataset import save, revert
+from billys.checkpoint import save, revert
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
