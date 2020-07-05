@@ -8,31 +8,38 @@
 # 6. Image classification. We can elaborate the extracted feature in order to classify a bill's image into its class.
 
 import os
-from enum import Enum
-from billys.dataset import fetch_billys, save_checkpoint, load_checkpoint
+
+from billys.dataset import fetch_billys
+from billys.checkpoint import save, revert
+from billys.pipeline import Step
 
 
 def dewarp(dataset):
-    raise NotImplementedError
+    # raise NotImplementedError
+    return 1
 
 
 def augment_contrast(dataset):
-    raise NotImplementedError
+    # raise NotImplementedError
+    return 1
 
 
 def ocr(dataset):
-    raise NotImplementedError
+    # raise NotImplementedError
+    return 1
 
 
 def feat_preproc(dataste):
-    raise NotImplementedError
+    # raise NotImplementedError
+    return 1
 
 
 def train_classifier(dataset):
-    raise NotImplementedError
+    # raise NotImplementedError
+    return 1
 
 
-def pipeline(step: int = 0):
+def pipeline(first_step: Step = Step.INIT):
     """
     Run the training pipeline starting from the step `step`.
 
@@ -42,75 +49,29 @@ def pipeline(step: int = 0):
         The starting point for the training pipeline.
         Can be one in the `Step` enum.
     """
+    data_home = os.path.join(os.getcwd(), 'dataset')
+    steps = {
+        Step.INIT: (lambda: fetch_billys(data_home=data_home)),
+        Step.DEWARP: (lambda checkpoint: dewarp(checkpoint)),
+        Step.CONTRAST: (lambda checkpoint: augment_contrast(checkpoint)),
+        Step.ORC: (lambda checkpoint: ocr(checkpoint)),
+        Step.FEAT_PREPROC: (lambda checkpoint: feat_preproc(checkpoint)),
+        Step.TRAIN_CLASSIFIER: (lambda checkpoint: train_classifier(checkpoint)),
+    }
 
-    # Phase A: load dataset
-    if Step(step) <= Step.INIT:
-        data_home = os.path.join(os.getcwd(), 'dataset')
-        train = fetch_billys(data_home=data_home)
-        save_checkpoint(Step.INIT, train)
+    for step, func in steps.items():
+        print(f'Performing step {int(step)} ... ', end='')
+        if first_step <= step:
+            if step is Step.INIT:
+                save(step, func())
+            else:
+                checkpoint = revert(step)
+                new_checkpoint = func(checkpoint)
+                save(step, new_checkpoint)
+        print('DONE')
 
-    # Phase B: preprocess images
-    if Step(step) <= Step.DEWARP:
-        checkpoint = load_checkpoint(Step.DEWARP)
-        dewarped = dewarp(train)
-        save_checkpoint(Step.DEWARP, dewarped)
+    print('Pipeline completed.')
 
-    if Step(step) <= Step.CONTRAST:
-        checkpoint = load_checkpoint(Step.CONTRAST)
-        contrasted = augment_contrast(checkpoint)
-        save_checkpoint(Step.CONTRAST, contrasted)
-
-    # Phase C: feature extraction (OCR)
-    if Step(step) <= Step.ORC:
-        checkpoint = load_checkpoint(Step.ORC)
-        text = ocr(checkpoint)
-        save_checkpoint(Step.ORC, text)
-
-    # Phase D: feature preprocessing
-    if Step(step) <= Step.FEAT_PREPROC:
-        checkpoint = load_checkpoint(Step.FEAT_PREPROC)
-        text_preproc = feat_preproc(checkpoint)
-        save_checkpoint(Step.FEAT_PREPROC, text_preproc)
-
-    # Phase E: classification
-    if Step(step) <= Step.TRAIN_CLASSIFIER:
-        checkpoint = load_checkpoint(Step.TRAIN_CLASSIFIER)
-        classifier = train_classifier(checkpoint)
-
-    # TODO: save the trained model
+    classifier = revert(Step.TRAIN_CLASSIFIER)
 
     return classifier
-
-
-class Step(Enum):
-    INIT = 0
-    DEWARP = 1
-    CONTRAST = 2
-    ORC = 3
-    FEAT_PREPROC = 4
-    TRAIN_CLASSIFIER = 5
-
-    def __eq__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value == other.value
-        return NotImplemented
-
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value < other.value
-        return NotImplemented
-
-    def __le__(self, other):
-        return self < other or self == other
-
-    def __gt__(self, other):
-        return not ((self < other) and (self == other))
-
-    def __ge__(self, other):
-        return not (self < other)
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __int__(self):
-        return self.value
