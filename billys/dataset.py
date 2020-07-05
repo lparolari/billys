@@ -3,7 +3,9 @@ Manage dataset interaction.
 """
 
 import os
+
 from sklearn.datasets import load_files
+
 from billys.util import get_data_home
 
 
@@ -55,35 +57,3 @@ def fetch_billys(data_home=None,
     else:
         raise ValueError(
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
-
-
-def save_checkpoint(step: int, dataset, data_home=None):
-    """
-    Save the given training dataset as checkpoint. 
-
-    Parameters
-    ----------
-    step: int, required
-        Load the checkpoint for the given step.
-
-    data_home : optional, default: None
-        Specify a download and cache folder for the datasets. If None,
-        all billys data is stored in default subfolder.
-    """
-    raise NotImplementedError
-
-
-def load_checkpoint(step: int, data_home=None):
-    """
-    Load the dataset checkpoint for the step `step`.
-
-    Parameters
-    ----------
-    step: int, required
-        Load the checkpoint for the given step.
-
-    data_home : optional, default: None
-        Specify a download and cache folder for the datasets. If None,
-        all billys data is stored in default subfolder.
-    """
-    raise NotImplementedError
