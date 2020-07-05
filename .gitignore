@@ -139,3 +139,6 @@ cython_debug/
 
 # venv
 venv/
+
+# visual studio code config file
+.vscode/*
