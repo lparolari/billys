@@ -1,4 +1,5 @@
 import os
+import os.path
 
 BILLYS_WORKSPACE_NAME = '.billys'
 
@@ -8,7 +9,7 @@ def get_data_home(data_home=None):
 
     if data_home is None:
 
-        user_home = os.environ['HOME']
+        user_home = os.path.expanduser('~')
         if user_home is None:
             raise RuntimeError(
                 'You should specify at least your home directory with HOME env variable.')
