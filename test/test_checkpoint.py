@@ -22,13 +22,13 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_revert_step_greater_or_equal_one(self):
-        save(step=Step.ORC, obj=dict(foo=1), data_home='/tmp')
+        save(step=Step.OCR, obj=dict(foo=1), data_home='/tmp')
         save(step=Step.DEWARP, obj="foo", data_home='/tmp')
-        save(step=Step.ORC, obj=2, data_home='/tmp')
-        save(step=Step.ORC, obj=dict(foo="bar"), data_home='/tmp')  # expected
+        save(step=Step.OCR, obj=2, data_home='/tmp')
+        save(step=Step.OCR, obj=dict(foo="bar"), data_home='/tmp')  # expected
         save(step=Step.CONTRAST, obj=["bar", "baz"], data_home='/tmp')
 
-        actual = revert(Step(int(Step.ORC) + 1), data_home='/tmp')
+        actual = revert(Step(int(Step.OCR) + 1), data_home='/tmp')
 
         self.assertEqual(dict(foo="bar"), actual)
 

@@ -5,7 +5,7 @@ class Step(Enum):
     INIT = 0
     DEWARP = 1
     CONTRAST = 2
-    ORC = 3
+    OCR = 3
     FEAT_PREPROC = 4
     TRAIN_CLASSIFIER = 5
 
