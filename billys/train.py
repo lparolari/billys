@@ -12,21 +12,20 @@ import os
 from billys.dataset import fetch_billys
 from billys.checkpoint import save, revert
 from billys.pipeline import Step
+from billys.ocr.ocr import ocr
 
 
 def dewarp(dataset):
-    # raise NotImplementedError
-    return 1
+    return dataset
 
 
 def augment_contrast(dataset):
-    # raise NotImplementedError
-    return 1
+    return dataset
 
 
-def ocr(dataset):
-    # raise NotImplementedError
-    return 1
+def ocr_step(dataset):
+    for image_path in dataset.filenames:
+        print(ocr(image_path))
 
 
 def feat_preproc(dataste):
@@ -54,13 +53,13 @@ def pipeline(first_step: Step = Step.INIT):
         Step.INIT: (lambda: fetch_billys(data_home=data_home)),
         Step.DEWARP: (lambda checkpoint: dewarp(checkpoint)),
         Step.CONTRAST: (lambda checkpoint: augment_contrast(checkpoint)),
-        Step.ORC: (lambda checkpoint: ocr(checkpoint)),
+        Step.OCR: (lambda checkpoint: ocr_step(checkpoint)),
         Step.FEAT_PREPROC: (lambda checkpoint: feat_preproc(checkpoint)),
         Step.TRAIN_CLASSIFIER: (lambda checkpoint: train_classifier(checkpoint)),
     }
 
     for step, func in steps.items():
-        print(f'Performing step {int(step)} ... ', end='')
+        print(f'Performing step {int(step)} ... ')
         if first_step <= step:
             if step is Step.INIT:
                 save(step, func())
@@ -68,7 +67,6 @@ def pipeline(first_step: Step = Step.INIT):
                 checkpoint = revert(step)
                 new_checkpoint = func(checkpoint)
                 save(step, new_checkpoint)
-        print('DONE')
 
     print('Pipeline completed.')
 
