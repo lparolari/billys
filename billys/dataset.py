@@ -13,6 +13,7 @@ from pdf2image import convert_from_path
 from billys.util import get_data_home
 
 
+
 def fetch_billys(data_home=None,
                  subset='train',
                  description=None,
@@ -93,13 +94,15 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
 
 
 def read_file(filename):
-    if filename.endswith('pdf'):
+    filelower = filename.lower()
+    print(filelower)
+    if filelower.endswith('pdf'):
         pages = convert_from_path(filename)
         for page in pages:
-            page.save('/tmp/pdf.jpg', 'JPEG')
+            page.save('C:\\source\\GIT\\billys\\tmp\\pdf.jpg', 'JPEG')
             break
         return cv2.imread('/tmp/pdf.jpg')
-    elif filename.endswith('jpg') or filename.endswith('png'):
+    elif filelower.endswith('jpg') or filelower.endswith('png'):
         return cv2.imread(filename)
     else:
         raise AssertionError('Supported file types are {}, you gived {}.'.format(
