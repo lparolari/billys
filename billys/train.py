@@ -12,10 +12,11 @@ import os
 from billys.dataset import fetch_billys
 from billys.checkpoint import save, revert
 from billys.pipeline import Step
+from billys.dewarp.dewarp import dewarp
 from billys.ocr.ocr import ocr
 
 
-def dewarp(dataset):
+def dewarp_step(dataset):
     return dataset
 
 
@@ -28,14 +29,12 @@ def ocr_step(dataset):
         print(ocr(image_path))
 
 
-def feat_preproc(dataste):
-    # raise NotImplementedError
-    return 1
+def feat_preproc(dataset):
+    return dataset
 
 
 def train_classifier(dataset):
-    # raise NotImplementedError
-    return 1
+    return dataset
 
 
 def pipeline(first_step: Step = Step.INIT):
@@ -51,7 +50,7 @@ def pipeline(first_step: Step = Step.INIT):
     data_home = os.path.join(os.getcwd(), 'dataset')
     steps = {
         Step.INIT: (lambda: fetch_billys(data_home=data_home)),
-        Step.DEWARP: (lambda checkpoint: dewarp(checkpoint)),
+        Step.DEWARP: (lambda checkpoint: dewarp_step(checkpoint)),
         Step.CONTRAST: (lambda checkpoint: augment_contrast(checkpoint)),
         Step.OCR: (lambda checkpoint: ocr_step(checkpoint)),
         Step.FEAT_PREPROC: (lambda checkpoint: feat_preproc(checkpoint)),
