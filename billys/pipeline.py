@@ -5,7 +5,8 @@ import pandas as pd
 
 from billys.dataset import fetch_billys, make_dataframe
 from billys.dewarp.dewarp import dewarp_image, make_model
-from billys.ocr.ocr import ocr_image
+from billys.ocr.ocr import ocr_data
+from billys.checkpoint import save, revert
 
 
 def pipeline():
@@ -17,6 +18,9 @@ def pipeline():
     TODO
     """
 
+    # Plese use only kebab-cased idenfiers for pipeline steps
+    # (https://it.wikipedia.org/wiki/Kebab_case)
+
     data_home = os.path.join(os.getcwd(), 'dataset')
     steps = [
         ('init', lambda *_: init(data_home)),
@@ -24,6 +28,7 @@ def pipeline():
         ('dewarp', dewarp),
         ('contrast', contrast),
         ('ocr', ocr),
+        ('dump-ocr', dump),
         ('print', show),
         ('feat-preproc', skip),
         ('train-classifier', skip)
@@ -92,7 +97,7 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     """
     df_out = df[[column for column in df.columns if column != 'data']].copy()
 
-    text_list = []
+    dict_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
@@ -100,17 +105,23 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
 
         print('Processing image {} ...'.format(filename))
 
-        ocr_text = ocr_image(imdata)
+        ocr_dict = ocr_data(imdata)
 
-        text_list.append(ocr_text)
+        dict_list.append(ocr_dict)
 
-    df_out['text'] = text_list
+    df_out['data'] = dict_list
 
     return df_out
 
 
 def skip(x):
     return x
+
+
+def dump(df):
+    filename = save('dump_ocr', df)
+    print(f'Dumped object into {filename}')
+    return df
 
 
 class Step(Enum):
