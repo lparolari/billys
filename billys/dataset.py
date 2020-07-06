@@ -8,6 +8,7 @@ import cv2
 import pandas as pd
 import sklearn
 import sklearn.datasets
+from pdf2image import convert_from_path
 
 from billys.util import get_data_home
 
@@ -62,7 +63,7 @@ def fetch_billys(data_home=None,
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
 
 
-def make_dataframe(dataset: sklearn.utils.Bunch):
+def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     """
     Create a dataframe from the given dataset.
 
@@ -71,14 +72,35 @@ def make_dataframe(dataset: sklearn.utils.Bunch):
     dataset: scikit.utils.Bunch, required
         #sklearn.utils.Bunch
         See https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html
+    force_good: bool, optional, default: False
+        If True all dataset samples are marked as good, and they will skip some
+        pipeline steps like dewarping an contrast augmentation.
     """
     df = pd.DataFrame(columns=['filename', 'target',
-                               'target_name', 'data', 'grayscale', 'smart_doc'])
+                               'data', 'grayscale', 'smart_doc'])
+
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
-    df['target_name'] = dataset.target_names
-    df['data'] = [cv2.imread(filename) for filename in dataset.filenames]
+    df['data'] = [read_file(filename) for filename in dataset.filenames]
     df['grayscale'] = False
     df['smart_doc'] = False
+    df['good'] = [filename.endswith(
+        '.pdf') or force_good for filename in dataset.filenames]
+    df['is_pdf'] = [filename.endswith('.pdf')
+                    for filename in dataset.filenames]
 
     return df
+
+
+def read_file(filename):
+    if filename.endswith('pdf'):
+        pages = convert_from_path(filename)
+        for page in pages:
+            page.save('/tmp/pdf.jpg', 'JPEG')
+            break
+        return cv2.imread('/tmp/pdf.jpg')
+    elif filename.endswith('jpg') or filename.endswith('png'):
+        return cv2.imread(filename)
+    else:
+        raise AssertionError('Supported file types are {}, you gived {}.'.format(
+            'pdf, jpg or png', filename.split('.')[0]))

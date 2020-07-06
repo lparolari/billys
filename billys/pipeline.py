@@ -22,8 +22,10 @@ def pipeline():
     # (https://it.wikipedia.org/wiki/Kebab_case)
 
     data_home = os.path.join(os.getcwd(), 'dataset')
+    force_good = True
+
     steps = [
-        ('init', lambda *_: init(data_home)),
+        ('init', lambda *_: init(data_home, force_good)),
         ('print', show),
         ('dewarp', dewarp),
         ('contrast', contrast),
@@ -53,9 +55,9 @@ def show(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def init(data_home: str) -> pd.DataFrame:
+def init(data_home: str, force_good: bool = False) -> pd.DataFrame:
     return make_dataframe(
-        fetch_billys(data_home=data_home))
+        fetch_billys(data_home=data_home), force_good=force_good)
 
 
 def dewarp(df: pd.DataFrame) -> pd.DataFrame:
