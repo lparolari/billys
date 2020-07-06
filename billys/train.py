@@ -37,7 +37,7 @@ def train_classifier(dataset):
     return dataset
 
 
-def pipeline(first_step: Step = Step.INIT):
+def pipeline(first_step: Step = Step.INIT, use_checkpoints: bool = False):
     """
     Run the training pipeline starting from the step `step`.
 
@@ -61,11 +61,15 @@ def pipeline(first_step: Step = Step.INIT):
         print(f'Performing step {int(step)} ... ')
         if first_step <= step:
             if step is Step.INIT:
-                save(step, func())
+                checkpoint = func()
+                if use_checkpoints is True:
+                    save(step, checkpoint)
             else:
-                checkpoint = revert(step)
-                new_checkpoint = func(checkpoint)
-                save(step, new_checkpoint)
+                if use_checkpoints is True:
+                    checkpoint = revert(step)
+                checkpoint = func(checkpoint)
+                if use_checkpoints is True:
+                    save(step, checkpoint)
 
     print('Pipeline completed.')
 
