@@ -16,11 +16,9 @@ def thresholding(image):
     return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
 
-def ocr(image_path):
-    img = cv2.imread(image_path)
-
-    img = get_grayscale(img)
-    img = thresholding(img)
+def ocr_image(image):
+    image = get_grayscale(image)
+    image = thresholding(image)
 
     # Adding custom options
     custom_config = r'-c tessedit_char_whitelist=0123 --psm 6 -l ita'
@@ -28,6 +26,6 @@ def ocr(image_path):
     # print(text)
 
     d = pytesseract.image_to_string(
-        img, output_type=pytesseract.Output.DICT, config=custom_config)
+        image, output_type=pytesseract.Output.DICT, config=custom_config)
 
     return d['text']

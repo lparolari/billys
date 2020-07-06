@@ -4,7 +4,10 @@ Manage dataset interaction.
 
 import os
 
-from sklearn.datasets import load_files
+import cv2
+import pandas as pd
+import sklearn
+import sklearn.datasets
 
 from billys.util import get_data_home
 
@@ -47,8 +50,8 @@ def fetch_billys(data_home=None,
         random_state=random_state
     )
 
-    cache = dict(train=load_files(train_path, **params),
-                 test=load_files(test_path, **params))
+    cache = dict(train=sklearn.datasets.load_files(train_path, **params),
+                 test=sklearn.datasets.load_files(test_path, **params))
 
     if subset in ('train', 'test'):
         return cache[subset]
@@ -57,3 +60,25 @@ def fetch_billys(data_home=None,
     else:
         raise ValueError(
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
+
+
+def make_dataframe(dataset: sklearn.utils.Bunch):
+    """
+    Create a dataframe from the given dataset.
+
+    Parameters
+    ----------
+    dataset: scikit.utils.Bunch, required
+        #sklearn.utils.Bunch
+        See https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html
+    """
+    df = pd.DataFrame(columns=['filename', 'target',
+                               'target_name', 'data', 'grayscale', 'smart_doc'])
+    df['filename'] = dataset.filenames
+    df['target'] = dataset.target
+    df['target_name'] = dataset.target_names
+    df['data'] = [cv2.imread(filename) for filename in dataset.filenames]
+    df['grayscale'] = False
+    df['smart_doc'] = False
+
+    return df

@@ -65,21 +65,21 @@ def scale_estim_corners(corners, scale_x, scale_y):
     return erg
 
 
-def dewarp(image_path, homography_model_path, smartDoc=False, grayscale=False):
+def make_model(model_path):
+    return tf.keras.models.load_model(model_path)
+
+
+def dewarp_image(image, homography_model, smart_doc=False, grayscale=False):
     """
-    Dewarp the image.
+    Dewarp the image `image` with model `homography_model`.
 
     Parameters
     ----------
-    image_path:
-    homography_model_path:
-    smartDoc:
-    grayscale:
+    image: The image data
+    homography_model: The model data
+    smart_doc: Whther we need to manually rotate the image
+    grayscale: Whther the image is in greyscale
     """
-
-    # build model
-    # '/content/gdrive/My Drive/temp/xception_10000.h5'
-    homography_model = tf.keras.models.load_model(homography_model_path)
 
     # network spatial input shape
     input_shape = (384, 256)
@@ -88,29 +88,27 @@ def dewarp(image_path, homography_model_path, smartDoc=False, grayscale=False):
     homography_dl = HomographyDL(
         input=None, output=None, architecture=None, model_fn=None, grayscale=None)
 
-    print('Processing image {} ...'.format(image_path))
-
     # load image
-    if grayscale:
-        img = cv2.imread(image_path, 0)
-    else:
-        img = cv2.imread(image_path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if not grayscale:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # img = cv2.imread(image_path, 0)-
+    # else:
+    #     img = cv2.imread(image_path)
 
     # manually rotate (should be automated)
-    if smartDoc:
-        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    if smart_doc:
+        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
     # save original size to compute scaling factor
     if grayscale:
-        org_y, org_x = img.shape
+        org_y, org_x = image.shape
     else:
-        org_y, org_x, _ = img.shape
+        org_y, org_x, _ = image.shape
 
     fac_y, fac_x = org_y/input_shape[0], org_x/input_shape[1]
 
     # resize (just for recovering homography)
-    img_homography = cv2.resize(img, (input_shape[1], input_shape[0]))
+    img_homography = cv2.resize(image, (input_shape[1], input_shape[0]))
 
     # adjust dimension for network
     if grayscale:
@@ -134,7 +132,7 @@ def dewarp(image_path, homography_model_path, smartDoc=False, grayscale=False):
     pts_dst = np.array([[0, 0], [org_x, 0], [org_x, org_y],
                         [0, org_y]], dtype='float32')
 
-    dewarped_image = warp_image(img, pts_src, pts_dst, grayscale)
+    dewarped_image = warp_image(image, pts_src, pts_dst, grayscale)
 
     return dewarped_image
     # cv2.imshow('test', dewarped_image)
