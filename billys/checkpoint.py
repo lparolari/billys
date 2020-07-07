@@ -9,16 +9,24 @@ from billys.util import get_data_home
 
 def save(step: str, obj, data_home=None):
     """
-    Save the given object as checkpoint. 
+    Save the given object as checkpoint with the `.pkl` format. 
 
     Parameters
     ----------
     step: str, required
         The checkpoint step.
 
+    obj: object
+        The object to save.
+
     data_home : optional, default: None
         A path for checkpoints object. 
         If None, `DEFAULT_PATH/checkpoints` will be used.
+
+    Retuns
+    ------
+    filename: str
+        The path to the saved object.
     """
     now = datetime.now()
     now_str = now.strftime('%Y%m%d-%H%M%S-%f')
@@ -49,6 +57,13 @@ def revert(prev_step: str, data_home=None):
     data_home : optional, default: None
         A path for checkpoints object. 
         If None, `DEFAULT_PATH/checkpoints` will be used.
+
+    Returns
+    -------
+    object
+        The saved object with previous step `prev_step` that is newer, 
+        i.e., we retrieve always the newer object if checkpoint with same
+        step are found.
     """
 
     if data_home is None:

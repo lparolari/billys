@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+import typing
 
 import pandas as pd
 
@@ -9,22 +10,21 @@ from billys.ocr.ocr import ocr_data
 from billys.checkpoint import save, revert
 
 
-def pipeline():
+def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
+             homography_model_path: str = os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+             force_good: bool = True):
     """
-    Run the training pipeline starting from the step `step`.
+    Run the training pipeline.
 
     Parameters
     ----------
     TODO
     """
 
-    # Plese use only kebab-cased idenfiers for pipeline steps
+    # Plese use only **kebab-cased** idenfiers for pipeline steps 
     # (https://it.wikipedia.org/wiki/Kebab_case)
-
-    data_home = os.path.join(os.getcwd(), 'dataset')
-    homography_model_path = os.path.join(
-        os.getcwd(), 'resource', 'model', 'xception_10000.h5')
-    force_good = True
+    # Other types of case could compromise the saving and loading
+    # functions for checkpoints.
 
     steps = [
         ('init', lambda *_: init(data_home, force_good)),
@@ -53,18 +53,63 @@ def pipeline():
 
 
 def show(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Print the dataframe as a side effect and return it.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe itself without changes.
+    """
     print(df)
     return df
 
 
-def init(data_home: str, force_good: bool = False) -> pd.DataFrame:
+def init(data_home: typing.Optional[str], force_good: bool = False) -> pd.DataFrame:
+    """
+    Initialize the dataframe with dataset read from `data_home` with
+    the funcrion `billys.dataset.fetch_billys`.
+
+    Parameters
+    ----------
+    data_home: default: None
+        The directory from which retrieve the dataset. See :func:`billys.util.get_data_home`.
+
+    force_good: default: False
+        Force all the samples in the dataframe to be marked as good and skip
+        some pipeline steps like dewarping and contrast aumentation.
+
+    Returns
+    -------
+    df
+        A new dataframe built with :func:`billys.dataset.make_dataframe`.
+    """
     return make_dataframe(
         fetch_billys(data_home=data_home), force_good=force_good)
 
 
 def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     """
-    Return a new dataframe where column `data` now contains the dewarped images data.
+    Foreach sample in the dataframe `df` use the model located at `homography_model_path`
+    to dewarp the images. Dewarp only images that are "not good".
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    homography_model_path
+        The path to the homography model file in `.h5` format. 
+
+    Returns
+    -------
+    df
+        A new dataframe where the column `data`is overwrited with the dewarped images data.
     """
     df_out = df[[column for column in df.columns if column != 'data']].copy()
 
@@ -92,13 +137,27 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
 
 
 def contrast(df: pd.DataFrame) -> pd.DataFrame:
+    # TODO: docs and implementation
+    # The identity function, for now.
     return df
 
 
 def ocr(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Return a new dataframe where the column `data` contains 
-    the text extracted from images.
+    Perform the ocr on images data.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    ------- 
+    df
+        A new dataframe where the column `data` contains a dict with extracted features from image.
+        The new column is a dict with keys the following keys
+            'level', 'page_num', 'block_num', 'par_num', 'line_num', 'word_num', 
+            'left', 'top', 'width', 'height', 'conf', 'text'
     """
     df_out = df[[column for column in df.columns if column != 'data']].copy()
 
@@ -120,47 +179,27 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def skip(x):
+    """
+    The identity function.
+    """
     return x
 
 
-def dump(df):
+def dump(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Dump the dataframe on file as a side effect with :func:`billys.checkpoint.save`,
+    and returns the dataframe without changes.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe without changes.
+    """
     filename = save('dump_ocr', df)
     print(f'Dumped object into {filename}')
     return df
-
-
-class Step(Enum):
-    INIT = 0
-    DEWARP = 1
-    CONTRAST = 2
-    OCR = 3
-    FEAT_PREPROC = 4
-    TRAIN_CLASSIFIER = 5
-
-    def __eq__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value == other.value
-        return NotImplemented
-
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value < other.value
-        return NotImplemented
-
-    def __le__(self, other):
-        return self < other or self == other
-
-    def __gt__(self, other):
-        return not ((self < other) and (self == other))
-
-    def __ge__(self, other):
-        return not (self < other)
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __int__(self):
-        return self.value
-
-    def __hash__(self):
-        return self.value

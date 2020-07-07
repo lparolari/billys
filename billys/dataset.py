@@ -3,6 +3,7 @@ Manage dataset interaction.
 """
 
 import os
+import pathlib
 
 import cv2
 import pandas as pd
@@ -11,7 +12,6 @@ import sklearn.datasets
 from pdf2image import convert_from_path
 
 from billys.util import get_data_home
-
 
 
 def fetch_billys(data_home=None,
@@ -23,7 +23,8 @@ def fetch_billys(data_home=None,
                  encoding=None,
                  decode_error='strict',
                  random_state=0):
-    """Load the billys dataset.
+    """
+    Load the billys dataset.
 
     Parameters
     ----------
@@ -34,6 +35,13 @@ def fetch_billys(data_home=None,
     subset : 'train' or 'test', 'all', optional
         Select the dataset to load: 'train' for the training set, 'test'
         for the test set, 'all' for both, with shuffled ordering.
+
+    Returns
+    -------
+    dataset
+        If `subset` is one of 'train', 'test' then the dataset in `scikit.utils.Bunch` is returned.
+        Otherwise it is returned a dict with key train and test and values are the two subset 
+        with `scikit.utils.Bunch` format.
     """
 
     data_home = get_data_home(data_home=data_home)
@@ -76,6 +84,18 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     force_good: bool, optional, default: False
         If True all dataset samples are marked as good, and they will skip some
         pipeline steps like dewarping an contrast augmentation.
+
+    Returns
+    -------
+    df
+        A new dataframe with the following columns
+         * 'filename', the path to image or pdf file,
+         * 'target', the encoded values for target names,
+         * 'data', the image data read with `cv2.imread(path)`,
+         * 'grayscale', whether the image is in greyscale,
+         * 'smart_doc', whether image is from smartdoc dataset,
+         * 'good', whether the image is good, i.e., it does not require dewarping,
+         * 'is_pdf', whether the image file is in pdf format.
     """
     df = pd.DataFrame(columns=['filename', 'target',
                                'data', 'grayscale', 'smart_doc'])
@@ -93,9 +113,25 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     return df
 
 
-def read_file(filename):
+def read_file(filename: str):
+    """
+    Read pdf, jpg and png file data and return it.
+
+    Parameters
+    ----------
+    filename: str
+        The path to the file to read. File extension must be one of
+        'jpg', 'png' or 'pdf'. If the file if a pdf file, it is converted to an image
+        with `pdf2image` module and then its data is read with `cv2`.
+
+    Returns
+    -------
+    imdata
+        The image data encoded with cv2 format, i.e., a list with shape
+        [w, h, number of channels].
+    """
     filelower = filename.lower()
-    print(filelower)
+
     if filelower.endswith('pdf'):
         pages = convert_from_path(filename)
         for page in pages:
@@ -106,4 +142,4 @@ def read_file(filename):
         return cv2.imread(filename)
     else:
         raise AssertionError('Supported file types are {}, you gived {}.'.format(
-            'pdf, jpg or png', filename.split('.')[0]))
+            'pdf, jpg or png', pathlib.Path(filename).suffix))

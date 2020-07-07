@@ -5,7 +5,13 @@ BILLYS_WORKSPACE_NAME = '.billys'
 
 
 def get_data_home(data_home=None):
-    """Return the path of the billys dataset."""
+    """
+    Returns
+    ------- 
+    path: str
+        `data_home` if it is not None, otherwise a path to a directory into the 
+        user HOME path.
+    """
 
     if data_home is None:
 
