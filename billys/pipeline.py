@@ -22,12 +22,14 @@ def pipeline():
     # (https://it.wikipedia.org/wiki/Kebab_case)
 
     data_home = os.path.join(os.getcwd(), 'dataset')
+    homography_model_path = os.path.join(
+        os.getcwd(), 'resource', 'model', 'xception_10000.h5')
     force_good = True
 
     steps = [
         ('init', lambda *_: init(data_home, force_good)),
         ('print', show),
-        ('dewarp', dewarp),
+        ('dewarp', lambda df: dewarp(df, homography_model_path)),
         ('contrast', contrast),
         ('ocr', ocr),
         ('dump-ocr', dump),
@@ -60,14 +62,13 @@ def init(data_home: str, force_good: bool = False) -> pd.DataFrame:
         fetch_billys(data_home=data_home), force_good=force_good)
 
 
-def dewarp(df: pd.DataFrame) -> pd.DataFrame:
+def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     """
     Return a new dataframe where column `data` now contains the dewarped images data.
     """
     df_out = df[[column for column in df.columns if column != 'data']].copy()
 
-    homography_model = make_model(
-        '/media/lparolari/Omicron/dev/uni/billys/resource/model/xception_10000.h5')
+    homography_model = make_model(homography_model_path)
     dewarped_list = []
 
     for index, row in df.iterrows():
@@ -75,13 +76,15 @@ def dewarp(df: pd.DataFrame) -> pd.DataFrame:
         imdata = row['data']
         grayscale = row['grayscale']
         smart_doc = row['smart_doc']
+        good = row['good']
 
-        print('Processing image {} ...'.format(filename))
-
-        dewarped_imdata = dewarp_image(
-            imdata, homography_model, grayscale=grayscale, smart_doc=smart_doc)
-
-        dewarped_list.append(dewarped_imdata)
+        if not good:
+            # Dewarp the image only if it is bad.
+            dewarped_imdata = dewarp_image(
+                imdata, homography_model, grayscale=grayscale, smart_doc=smart_doc)
+            dewarped_list.append(dewarped_imdata)
+        else:
+            dewarped_list.append(imdata)
 
     df_out['data'] = dewarped_list
 
