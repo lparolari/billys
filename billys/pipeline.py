@@ -21,13 +21,14 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     TODO
     """
 
-    # Plese use only **kebab-cased** idenfiers for pipeline steps 
+    # Plese use only **kebab-cased** idenfiers for pipeline steps
     # (https://it.wikipedia.org/wiki/Kebab_case)
     # Other types of case could compromise the saving and loading
     # functions for checkpoints.
 
     steps = [
-        ('init', lambda *_: init(data_home, force_good)),
+        ('fetch-billys', lambda *_: fetch(data_home)),
+        ('init', lambda dataset: init(dataset, force_good)),
         ('print', show),
         ('dewarp', lambda df: dewarp(df, homography_model_path)),
         ('contrast', contrast),
@@ -52,33 +53,32 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     return out
 
 
-def show(df: pd.DataFrame) -> pd.DataFrame:
+def fetch(data_home: typing.Optional[str] = None):
     """
-    Print the dataframe as a side effect and return it.
-
-    Parameters
-    ----------
-    df
-        The dataset as a dataframe.
-
-    Returns
-    -------
-    df
-        The dataframe itself without changes.
-    """
-    print(df)
-    return df
-
-
-def init(data_home: typing.Optional[str], force_good: bool = False) -> pd.DataFrame:
-    """
-    Initialize the dataframe with dataset read from `data_home` with
-    the funcrion `billys.dataset.fetch_billys`.
+    Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
+    return it.
 
     Parameters
     ----------
     data_home: default: None
         The directory from which retrieve the dataset. See :func:`billys.util.get_data_home`.
+
+    Returns
+    -------
+    dataset
+        The dataset, see :func:`billys.dataset.fetch_billys`.
+    """
+    return fetch_billys(data_home=data_home)
+
+
+def init(dataset, force_good: bool = False) -> pd.DataFrame:
+    """
+    Initialize the dataframe from given dataset.
+
+    Parameters
+    ----------
+    dataset: required
+        The dataset loaded with :func:`billys.dataset.fetch_billys`.
 
     force_good: default: False
         Force all the samples in the dataframe to be marked as good and skip
@@ -89,8 +89,7 @@ def init(data_home: typing.Optional[str], force_good: bool = False) -> pd.DataFr
     df
         A new dataframe built with :func:`billys.dataset.make_dataframe`.
     """
-    return make_dataframe(
-        fetch_billys(data_home=data_home), force_good=force_good)
+    return make_dataframe(dataset=dataset, force_good=force_good)
 
 
 def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
@@ -176,6 +175,24 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     df_out['data'] = dict_list
 
     return df_out
+
+
+def show(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Print the dataframe as a side effect and return it.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe itself without changes.
+    """
+    print(df)
+    return df
 
 
 def skip(x):
