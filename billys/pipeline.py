@@ -139,9 +139,43 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
 
 
 def contrast(df: pd.DataFrame) -> pd.DataFrame:
-    # TODO: docs and implementation
-    # The identity function, for now.
-    return df
+    """
+    Perform the contrast augmentation.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+        Requires columns
+         * 'data'
+
+    Returns
+    -------
+    df
+        A new dataframe where the column 'data' have been updated.
+        The update column contains the image with augmented contrast
+        data.
+    """
+    df_out = df[[column for column in df.columns if column != 'data']].copy()
+
+    contrast_list = []
+
+    for index, row in df.iterrows():
+        imdata = row['data']
+
+        # Convert the background color to gray-
+        converted_image = cv2.cvtColor(imdata, cv2.COLOR_BGR2GRAY)
+
+        # Augment contrast between white and black with thresholding and
+        # retain only the white part.
+        contrasted_image = cv2.threshold(
+            converted_image, 127, 255, cv2.THRESH_BINARY)[1]
+
+        contrast_list.append(contrasted_image)
+
+    df_out['data'] = contrast_list
+
+    return df_out
 
 
 def ocr(df: pd.DataFrame) -> pd.DataFrame:
