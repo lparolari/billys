@@ -3,11 +3,13 @@ from enum import Enum
 import typing
 
 import pandas as pd
+import cv2
 
 from billys.dataset import fetch_billys, make_dataframe
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
 from billys.checkpoint import save, revert
+from billys.util import get_data_home
 
 
 def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
@@ -28,11 +30,12 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
 
     steps = [
         ('fetch-billys', lambda *_: fetch(data_home)),
-        ('init', lambda dataset: init(dataset, force_good)),
+        ('init-dataframe', lambda dataset: init(dataset, force_good)),
         ('print', show),
         ('dewarp', lambda df: dewarp(df, homography_model_path)),
         ('contrast', contrast),
         ('ocr', ocr),
+        ('show-boxed-text', show_boxed_text),
         ('dump-ocr', dump),
         ('print', show),
         ('feat-preproc', skip),
@@ -153,12 +156,11 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     Returns
     ------- 
     df
-        A new dataframe where the column `data` contains a dict with extracted features from image.
-        The new column is a dict with keys the following keys
-            'level', 'page_num', 'block_num', 'par_num', 'line_num', 'word_num', 
-            'left', 'top', 'width', 'height', 'conf', 'text'
+        A new dataframe with a new column `ocr` that contains a dict
+        with extracted features from image. The type of every value
+        in this column is documented at :func:`billys.ocr.ocr.ocr_data`.
     """
-    df_out = df[[column for column in df.columns if column != 'data']].copy()
+    df_out = df.copy()
 
     dict_list = []
 
@@ -166,13 +168,10 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
         filename = row['filename']
         imdata = row['data']
 
-        print('Processing image {} ...'.format(filename))
-
         ocr_dict = ocr_data(imdata)
-
         dict_list.append(ocr_dict)
 
-    df_out['data'] = dict_list
+    df_out['ocr'] = dict_list
 
     return df_out
 
@@ -219,4 +218,51 @@ def dump(df: pd.DataFrame) -> pd.DataFrame:
     """
     filename = save('dump_ocr', df)
     print(f'Dumped object into {filename}')
+    return df
+
+
+def show_boxed_text(df: pd.DataFrame):
+    """
+    Save iamges with boxed words as a side effect and return the
+    dataframe without changes. Images are saved in the `boxed`
+    directory inside the path returned by :func:`get_data_home`.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+        Requires the columns
+         * 'data', the image with contrast and illumination;
+         * 'ocr', the dict with ocr features;
+         * 'filename', the original image filename.
+
+    Returns
+    -------
+    df
+        The dataframe without changes.
+    """
+
+    boxed_images_path = os.path.join(get_data_home(), 'boxed')
+    os.makedirs(boxed_images_path, exist_ok=True)
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        imdata = row['data']
+        filename = row['filename']
+
+        n_boxes = len(ocr_dict['text'])
+        for i in range(n_boxes):
+            if int(ocr_dict['conf'][i]) > 60:
+                (x, y, w, h) = (ocr_dict['left'][i], ocr_dict['top']
+                                [i], ocr_dict['width'][i], ocr_dict['height'][i])
+                imdata = cv2.rectangle(
+                    imdata, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        imS = cv2.resize(imdata, (500, 700))
+
+        name = os.path.basename(filename).split('.')[0] + '.jpg'
+        new_filename = os.path.join(boxed_images_path, name)
+
+        cv2.imwrite(new_filename, imS)
+
     return df
