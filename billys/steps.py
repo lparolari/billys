@@ -16,6 +16,9 @@ from billys.checkpoint import save
 from billys.dataset import fetch_billys, make_dataframe, read_image, save_image
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
+from billys.text.text import (to_lower, remove_accented_chars, remove_punctuation,
+                              remove_nums, remove_stopwords, lemmatize, tokenize,
+                              download_stopwords, make_nlp)
 
 
 def show(df: pd.DataFrame) -> pd.DataFrame:
@@ -437,3 +440,65 @@ def show_boxed_text(df: pd.DataFrame):
         save_image(new_filename, img)
 
     return df
+
+
+"""
+Text preprocessing steps
+"""
+
+
+def extract_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    TODO
+    """
+
+    df_out = df.copy()
+
+    text_list = []
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        filename = row['filename']
+
+        logging.debug(f'Extracting text for {filename}')
+
+        text = " ".join(ocr_dict['text'])
+
+        text_list.append(text)
+
+    df_out['text'] = text_list
+
+    return df_out
+
+
+def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    TODO
+    """
+
+    df_out = df.copy()
+
+    download_stopwords()
+    nlp = make_nlp()
+
+    text_list = []
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        filename = row['filename']
+        text = row['text']
+
+        logging.debug(f'Preprocessing text for {filename}')
+
+        text = to_lower(text)
+        text = remove_accented_chars(text)
+        text = remove_punctuation(text)
+        text = lemmatize(text, nlp)
+        text = remove_nums(text)
+        text = remove_stopwords(text)
+
+        text_list.append(text)
+
+    df_out['text'] = text_list
+
+    return df_out

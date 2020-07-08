@@ -19,7 +19,7 @@ from billys.steps import dump, show, skip
 from billys.steps import build, fetch, pickle
 from billys.steps import brightness, contrast, dewarp, rotation
 from billys.steps import ocr, show_boxed_text
-from billys.pipe.shared import dump, show, skip
+from billys.steps import extract_text, preprocess_text
 from billys.util import get_elapsed_time, now, get_data_home
 
 
@@ -41,6 +41,8 @@ def get_all_steps() -> List[str]:
         'fetch-checkpoint',
         'ocr',
         'show-boxed-text',
+        'text-extraction',
+        'text-preprocessing',
     ]
 
 
@@ -116,6 +118,8 @@ def make_steps(step_list, config=get_config()):
         'contrast': contrast,
         'ocr': ocr,
         'show-boxed-text': show_boxed_text,
+        'extract-text': extract_text,
+        'preprocess-text': preprocess_text,
     }
 
     to_do_steps = []
