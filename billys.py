@@ -1,8 +1,11 @@
 import argparse
+import logging
 
 from billys.pipeline import pipeline
 
 if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser(description='Process some integers.')
 

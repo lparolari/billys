@@ -1,5 +1,7 @@
 import os
 import os.path
+import time
+from decimal import ROUND_HALF_UP, Decimal
 
 BILLYS_WORKSPACE_NAME = '.billys'
 
@@ -55,5 +57,15 @@ def make_filename(filename, cat, step, data_home=None):
     name_only = os.path.splitext(name_ext)[0]
     return os.path.join(get_data_home(data_home=data_home), step, 'train', cat, f'{name_only}.jpg')
 
+
 def ensure_dir(filename: str):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+
+def now():
+    return time.time()
+
+
+def get_elapsed_time(start_time, end_time):
+    return Decimal(end_time - start_time).quantize(Decimal('.001'),
+                                                   rounding=ROUND_HALF_UP)

@@ -1,15 +1,16 @@
 """
 Image preprocessing pipeline steps
 """
+import logging
 
-import pandas as pd
 import cv2
-from PIL import Image, ImageEnhance, ImageOps
+import pandas as pd
 import piexif
+from PIL import Image, ImageEnhance, ImageOps
 
 from billys.dataset import read_image, save_image
 from billys.dewarp.dewarp import dewarp_image, make_model
-from billys.util import make_filename, ensure_dir
+from billys.util import ensure_dir, make_filename
 
 
 def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
@@ -25,7 +26,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
             'filename', 'grayscale', 'is_good'
 
     homography_model_path
-        The path to the homography model file in `.h5` format. 
+        The path to the homography model file in `.h5` format.
 
     Returns
     -------
@@ -35,7 +36,8 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
          * 'is_good', dropped
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in ['filename', 'is_pdf', 'is_good']]].copy()
+    df_out = df[[column for column in df.columns if column not in [
+        'filename', 'is_pdf', 'is_good']]].copy()
 
     homography_model = make_model(homography_model_path)
     new_filename_list = []
@@ -48,14 +50,16 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         target_name = row['target_name']
         imdata = read_image(filename, is_pdf=is_pdf)
 
-        if not is_good:
-            # Dewarp the image only if it is bad.
+        logging.debug(f'Dewarping image {filename}')
+
+        if not is_good:             # Dewarp the image only if it is bad.
             dewarped_imdata = dewarp_image(
                 imdata, homography_model, grayscale=grayscale)
         else:
             dewarped_imdata = imdata
-        
-        new_filename = make_filename(filename=filename, step='dewarp', cat=target_name)
+
+        new_filename = make_filename(
+            filename=filename, step='dewarp', cat=target_name)
         new_filename_list.append(new_filename)
 
         save_image(new_filename, dewarped_imdata)
@@ -77,12 +81,13 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
             'filename', 'target_name'
 
     Returns
-    -------
+    - ------
     df
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
+    df_out = df[[column for column in df.columns if column not in [
+        'filename']]].copy()
 
     new_filename_list = []
 
@@ -91,6 +96,8 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
         target_name = row['target_name']
 
         img = Image.open(filename)
+
+        logging.debug(f'Rotating image {filename}')
 
         # load the image oriented corrected
 
@@ -107,19 +114,22 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
                 elif orientation == 4:
                     img = img.rotate(180).transpose(Image.FLIP_LEFT_RIGHT)
                 elif orientation == 5:
-                    img = img.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    img = img.rotate(-90,
+                                     expand=True).transpose(Image.FLIP_LEFT_RIGHT)
                 elif orientation == 6:
                     img = img.rotate(-90, expand=True)
                 elif orientation == 7:
-                    img = img.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                    img = img.rotate(90, expand=True).transpose(
+                        Image.FLIP_LEFT_RIGHT)
                 elif orientation == 8:
                     img = img.rotate(90, expand=True)
 
-        new_filename = make_filename(filename=filename, step='rotation', cat=target_name)
+        new_filename = make_filename(
+            filename=filename, step='rotation', cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)
-        save_image(new_filename, img, dpi=(300,300), engine='pil')
+        save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
 
@@ -132,7 +142,7 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
     Images are saved in the working directory under 'brightness' folder.
 
     Parameters
-    ----------
+    - ---------
     df
         The dataset as a dataframe. Required columns are
             'filename', 'target_name'
@@ -143,7 +153,8 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
+    df_out = df[[column for column in df.columns if column not in [
+        'filename']]].copy()
 
     new_filename_list = []
 
@@ -153,19 +164,22 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
 
         img = Image.open(filename)
 
+        logging.debug(f'Brightening image {filename}')
+
         # brightness
 
         img = ImageEnhance.Brightness(img)
-        
-        brightness = 2.0 # increase brightness
+
+        brightness = 2.0  # increase brightness
 
         img = img.enhance(brightness)
 
-        new_filename = make_filename(filename=filename, step='brightness', cat=target_name)
+        new_filename = make_filename(
+            filename=filename, step='brightness', cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)
-        save_image(new_filename, img, dpi=(300,300), engine='pil')
+        save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
 
@@ -189,7 +203,8 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
+    df_out = df[[column for column in df.columns if column not in [
+        'filename']]].copy()
 
     new_filename_list = []
 
@@ -199,19 +214,22 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
 
         img = Image.open(filename)
 
+        logging.debug(f'Contrasting image {filename}')
+
         # contrast
 
         img = ImageEnhance.Contrast(img)
 
-        contrast = 2.0 # increase contrast
-        
+        contrast = 2.0  # increase contrast
+
         img = img.enhance(contrast)
 
-        new_filename = make_filename(filename=filename, step='contrast', cat=target_name)
+        new_filename = make_filename(
+            filename=filename, step='contrast', cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)
-        save_image(new_filename, img, dpi=(300,300), engine='pil')
+        save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
 

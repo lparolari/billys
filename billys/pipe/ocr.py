@@ -2,14 +2,15 @@
 Ocr pipeline steps.
 """
 
+import logging
 import os
 
 import pandas as pd
 import cv2
 
-from billys.dataset import read_image
+from billys.dataset import read_image, save_image
 from billys.ocr.ocr import ocr_data
-from billys.util import get_data_home
+from billys.util import get_data_home, make_filename, ensure_dir
 
 
 def ocr(df: pd.DataFrame) -> pd.DataFrame:
@@ -35,6 +36,8 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     for index, row in df.iterrows():
         filename = row['filename']
         imdata = read_image(filename, is_pdf=False)
+
+        logging.debug(f'Performing ocr on image {filename}')
 
         ocr_dict = ocr_data(imdata)
         dict_list.append(ocr_dict)
@@ -71,7 +74,10 @@ def show_boxed_text(df: pd.DataFrame):
     for index, row in df.iterrows():
         ocr_dict = row['ocr']
         filename = row['filename']
+        target_name = row['target_name']
         imdata = read_image(filename, is_pdf=False)
+
+        logging.debug(f'Boxing image {filename}')
 
         n_boxes = len(ocr_dict['text'])
         for i in range(n_boxes):
@@ -81,11 +87,12 @@ def show_boxed_text(df: pd.DataFrame):
                 imdata = cv2.rectangle(
                     imdata, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        imS = cv2.resize(imdata, (500, 700))
+        img = cv2.resize(imdata, (500, 700))
 
-        name = os.path.basename(filename).split('.')[0] + '.jpg'
-        new_filename = os.path.join(boxed_images_path, name)
+        new_filename = make_filename(
+            filename=filename, step='boxed', cat=target_name)
 
-        cv2.imwrite(new_filename, imS)
+        ensure_dir(new_filename)
+        save_image(new_filename, img)
 
     return df

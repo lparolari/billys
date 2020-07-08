@@ -144,3 +144,6 @@ venv/
 .vscode/*
 
 dataset/
+
+# tesseract temp files
+*.tif
