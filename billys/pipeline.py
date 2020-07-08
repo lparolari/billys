@@ -8,6 +8,7 @@ compromise the saving and loading functions for checkpoints.
 
 import logging
 import os
+from typing import List
 
 import cv2
 import pandas as pd
@@ -19,7 +20,6 @@ from billys.pipe.init import build, fetch
 from billys.pipe.ocr import ocr, show_boxed_text
 from billys.pipe.shared import dump, show, skip
 from billys.util import get_elapsed_time, now
-
 
 """Available pipeline stesp, to be combined and used with the :func:`pipeline`."""
 PIPELINE_AVAILABLE_STEPS = {
@@ -43,7 +43,18 @@ def get_all_steps() -> List[str]:
     steps
         The list of all available steps in pipeline.
     """
-    return PIPELINE_AVAILABLE_STEPS.keys()
+    return [
+        'fetch-billys',
+        'fetch-checkpoint',
+        'init-dataframe',
+        'print',
+        'dewarp',
+        'rotation',
+        'brightness',
+        'fetch-checkpoint',
+        'ocr',
+        'show-boxed-text',
+    ]
 
 
 def get_default_steps() -> List[str]:
@@ -60,13 +71,12 @@ def get_default_steps() -> List[str]:
         'dewarp',
         'rotation',
         'brightness',
-        'fetch-checkpoint',
         'ocr',
         'show-boxed-text',
     ]
 
 
-def get_default_config():
+def get_config(data_home=None, dataset_name=None, force_good=None, homography_model_path=None):
     """
     Returns
     -------
@@ -79,14 +89,14 @@ def get_default_config():
          * 'homography_model_path'
     """
     return {
-        'data_home': os.path.join(os.getcwd(), 'dataset'),
-        'dataset_name': 'billys',
-        'force_good': True,
-        'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+        'data_home': data_home or os.path.join(os.getcwd(), 'dataset'),
+        'dataset_name': dataset_name or 'billys',
+        'force_good': force_good or True,
+        'homography_model_path': homography_model_path or os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
     }
 
 
-def make_steps(step_list, config=make_default_config()):
+def make_steps(step_list, config=get_config()):
     """
     Build a list of pairs where the first component is the step name, while the
     second component is the function to run for that step.
@@ -101,10 +111,25 @@ def make_steps(step_list, config=make_default_config()):
     force_good = config['force_good']
     homography_model_path = config['homography_model_path']
 
+    logging.debug(f'Building steps {step_list} with config {config}')
+
+    available_steps = {
+        'fetch-billys': lambda *_: fetch(data_home=data_home),
+        'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=dataset_name),
+        'init-dataframe': lambda dataset: build(dataset, force_good=force_good),
+        'print': show,
+        'dewarp': lambda df: dewarp(df, homography_model_path=homography_model_path),
+        'rotation': rotation,
+        'brightness': brightness,
+        'contrast': contrast,
+        'ocr': ocr,
+        'show-boxed-text': show_boxed_text,
+    }
+
     to_do_steps = []
 
     for step in step_list:
-        to_do_steps.append(tuple((step, PIPELINE_AVAILABLE_STEPS[step])))
+        to_do_steps.append(tuple((step, available_steps[step])))
 
     return to_do_steps
 
