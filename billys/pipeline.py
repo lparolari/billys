@@ -5,7 +5,7 @@ import typing
 import pandas as pd
 import cv2
 
-from billys.dataset import fetch_billys, make_dataframe
+from billys.dataset import fetch_billys, make_dataframe, read_file, save_file, make_filename
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
 from billys.checkpoint import save, revert
@@ -33,13 +33,13 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
         ('init-dataframe', lambda dataset: init(dataset, force_good)),
         ('print', show),
         ('dewarp', lambda df: dewarp(df, homography_model_path)),
-        ('contrast', contrast),
-        ('ocr', ocr),
-        ('show-boxed-text', show_boxed_text),
-        ('dump-ocr', dump),
-        ('print', show),
-        ('feat-preproc', skip),
-        ('train-classifier', skip)
+        # ('contrast', contrast),
+        # ('ocr', ocr),
+        # ('show-boxed-text', show_boxed_text),
+        # ('dump-ocr', dump),
+        # ('print', show),
+        # ('feat-preproc', skip),
+        # ('train-classifier', skip)
     ]
 
     out = None
@@ -103,7 +103,8 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     Parameters
     ----------
     df
-        The dataset as a dataframe.
+        The dataset as a dataframe. Required columns are
+            'filename', 'grayscale', 'is_good'
 
     homography_model_path
         The path to the homography model file in `.h5` format. 
@@ -111,29 +112,35 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     Returns
     -------
     df
-        A new dataframe where the column `data`is overwrited with the dewarped images data.
+        A new dataframe with follwing changes
+         * 'is_pdf', dropped
+         * 'is_good', dropped
+         * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column != 'data']].copy()
+    df_out = df[[column for column in df.columns if column not in ['filename', 'is_pdf', 'is_good']]].copy()
 
     homography_model = make_model(homography_model_path)
-    dewarped_list = []
+    new_filename_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
-        imdata = row['data']
         grayscale = row['grayscale']
-        smart_doc = row['smart_doc']
-        good = row['good']
+        is_good = row['is_good']
+        target_name = row['target_name']
+        imdata = read_file(filename)
 
-        if not good:
+        if not is_good:
             # Dewarp the image only if it is bad.
             dewarped_imdata = dewarp_image(
-                imdata, homography_model, grayscale=grayscale, smart_doc=smart_doc)
-            dewarped_list.append(dewarped_imdata)
+                imdata, homography_model, grayscale=grayscale)
         else:
-            dewarped_list.append(imdata)
+            dewarped_imdata = imdata
+        
+        new_filename = make_filename(filename=filename, step='dewarp', cat=target_name)
+        new_filename_list.append(new_filename)
+        save_file(new_filename, dewarp_image)
 
-    df_out['data'] = dewarped_list
+    df_out['filename'] = new_filename_list
 
     return df_out
 

@@ -95,17 +95,23 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
          * 'target', the encoded values for target names,
          * 'grayscale', whether the image is in greyscale,
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
-         * 'is_pdf', whether the image file is in pdf format,
-         * 'is_valid', whether the file can be used in pipeline or not.
+         * 'is_pdf', whether the image file is in pdf format-
     """
-    df = pd.DataFrame(columns=['filename', 'target', 'grayscale', 'good', 'is_pdf', 'is_valid'])
+    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'grayscale', 'good', 'is_pdf', 'is_valid'])
 
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
+    df['target_name'] = [ dataset.target_names[target] for target in dataset.target ]
     df['grayscale'] = False
     df['is_good'] = [is_good(filename, force_good) for filename in dataset.filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
     df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
+
+    # Drop all invalid rows
+    df = df.drop(df[df.is_valid is False].index)
+
+    # Drop is_valid column
+    df = df[[column for column in df.columns if column not in ['is_valid']]]
 
     return df
 
