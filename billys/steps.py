@@ -16,9 +16,9 @@ from billys.checkpoint import save
 from billys.dataset import fetch_billys, make_dataframe, read_image, save_image
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
-from billys.text.text import (to_lower, remove_accented_chars, remove_punctuation,
-                              remove_nums, remove_stopwords, lemmatize, tokenize,
-                              download_stopwords, make_nlp)
+from billys.text.preprocessing import (to_lower, remove_accented_chars, remove_punctuation,
+                                       remove_nums, remove_stopwords, lemmatize, tokenize,
+                                       download_stopwords, make_nlp)
 
 
 def show(df: pd.DataFrame) -> pd.DataFrame:
