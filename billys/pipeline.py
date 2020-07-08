@@ -1,14 +1,16 @@
+import logging
 import os
 
-import pandas as pd
 import cv2
-from PIL import Image, ImageEnhance, ImageOps
+import pandas as pd
 import piexif
+from PIL import Image, ImageEnhance, ImageOps
 
-from billys.pipe.shared import show, skip, dump 
-from billys.pipe.init import fetch, build 
-from billys.pipe.img_preproc import dewarp, rotation, brightness, contrast 
+from billys.pipe.img_preproc import brightness, contrast, dewarp, rotation
+from billys.pipe.init import build, fetch
 from billys.pipe.ocr import ocr, show_boxed_text
+from billys.pipe.shared import dump, show, skip
+from billys.util import get_elapsed_time, now
 
 
 def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
@@ -46,15 +48,20 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     out = None
     i = 0
 
+    start_time = now()
+
     for item in steps:
         step, func = item
-        print(f'Performing step {i}: {step} ... ')
+        logging.info(f'Performing step {i}: {step} ... ')
 
         prev_out = out
         out = func(prev_out)
 
         i += 1
 
-    print('Pipeline completed.')
+    end_time = now()
+    elapsed = get_elapsed_time(start_time, end_time)
+
+    logging.info(f'Pipeline completed in {elapsed} seconds.')
 
     return out

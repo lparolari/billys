@@ -2,9 +2,9 @@
 Manage dataset interaction.
 """
 
+import logging
 import os
 import pathlib
-import logging
 
 import cv2
 import pandas as pd
@@ -12,8 +12,8 @@ import sklearn
 import sklearn.datasets
 from pdf2image import convert_from_path
 
-from billys.util import get_data_home, get_data_tmp, ensure_dir
 from billys.constant import BILLYS_SUPPORTED_IMAGES_FILE_LIST
+from billys.util import ensure_dir, get_data_home, get_data_tmp
 
 
 def fetch_billys(data_home=None,
@@ -98,18 +98,21 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
          * 'is_pdf', whether the image file is in pdf format-
     """
-    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'grayscale', 'good', 'is_pdf', 'is_valid'])
+    df = pd.DataFrame(columns=[
+                      'filename', 'target', 'target_name', 'grayscale', 'good', 'is_pdf', 'is_valid'])
 
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
-    df['target_name'] = [ dataset.target_names[target] for target in dataset.target ]
+    df['target_name'] = [dataset.target_names[target]
+                         for target in dataset.target]
     df['grayscale'] = False
-    df['is_good'] = [is_good(filename, force_good) for filename in dataset.filenames]
+    df['is_good'] = [is_good(filename, force_good)
+                     for filename in dataset.filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
     df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
 
     # Drop all invalid rows
-    indexes = df[ df['is_valid'] == True ].index
+    indexes = df[df['is_valid'] == True].index
     df.drop(indexes, inplace=True)
 
     # Drop is_valid column
@@ -176,13 +179,13 @@ def is_valid(filename: str) -> bool:
 
     if len(splitted) < 2:
         return False
-    
+
     ext = splitted[1]
     ext = ext.lower()
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
 
 
-def read_image(filename, is_pdf, engine:str = 'cv2'):
+def read_image(filename, is_pdf, engine: str = 'cv2'):
     """
     Read the file data if it is supported and return it. If the file
     is not supported, we ignore it.
@@ -213,22 +216,24 @@ def read_image(filename, is_pdf, engine:str = 'cv2'):
             return cv2.imread(tmp_filename)
 
         else:
-            # Directly load the image data. We do not check the 
+            # Directly load the image data. We do not check the
             # image format because we assume that it is valid.
             return cv2.imread(filename)
     elif engine == 'pil':
         return Image.open(filename)
     else:
-        loggin.warning('Supported engines are `cv2` or `pil`, you gived {engine}')
+        loggin.warning(
+            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
         return None
 
 
-def save_image(filename, imdata, engine:str = 'cv2', dpi=None):
+def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
     ensure_dir(os.path.dirname(filename))
     if engine == 'cv2':
         cv2.imwrite(filename, imdata)
     elif engine == 'pil':
         imdata.save(filename, 'jpeg', dpi=dpi)
     else:
-        loggin.warning('Supported engines are `cv2` or `pil`, you gived {engine}')
+        loggin.warning(
+            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
         return None
