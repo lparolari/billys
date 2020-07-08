@@ -12,8 +12,8 @@ import sklearn
 import sklearn.datasets
 from pdf2image import convert_from_path
 
-from billys.util import get_data_home, get_data_tmp
-from billys.constant import BILLYS_SUPPORTED_IMAGES_FILES
+from billys.util import get_data_home, get_data_tmp, ensure_dir
+from billys.constant import BILLYS_SUPPORTED_IMAGES_FILE_LIST
 
 
 def fetch_billys(data_home=None,
@@ -93,6 +93,7 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
         A new dataframe with the following columns
          * 'filename', the path to image or pdf file,
          * 'target', the encoded values for target names,
+         * 'target_name', the target name,
          * 'grayscale', whether the image is in greyscale,
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
          * 'is_pdf', whether the image file is in pdf format-
@@ -108,7 +109,8 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
 
     # Drop all invalid rows
-    df = df.drop(df[df.is_valid is False].index)
+    indexes = df[ df['is_valid'] == True ].index
+    df.drop(indexes, inplace=True)
 
     # Drop is_valid column
     df = df[[column for column in df.columns if column not in ['is_valid']]]
@@ -179,7 +181,7 @@ def is_valid(filename: str) -> bool:
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
 
 
-def read_file(filename, is_valid, is_pdf):
+def read_image(filename, is_pdf, engine:str = 'cv2'):
     """
     Read the file data if it is supported and return it. If the file
     is not supported, we ignore it.
@@ -187,8 +189,8 @@ def read_file(filename, is_valid, is_pdf):
     Parameters
     ----------
     filename
-    is_valid
     is_pdf
+    engine: cv2 or pil
 
     Returns
     -------
@@ -196,11 +198,8 @@ def read_file(filename, is_valid, is_pdf):
         The image data encoded with cv2 format, i.e., a list with shape
         [w, h, number of channels].
     """
-
-    if not is_valid:
-        logging.warning(f'The file {filename} is not supported. Skipping.')
-    else:
-        if is_pdf
+    if engine == 'cv2':
+        if is_pdf:
 
             # Convert pdf to image and the store the image data.
             pages = convert_from_path(filename)
@@ -216,7 +215,19 @@ def read_file(filename, is_valid, is_pdf):
             # Directly load the image data. We do not check the 
             # image format because we assume that it is valid.
             return cv2.imread(filename)
+    elif engine == 'pil':
+        return Image.open(filename)
+    else:
+        loggin.warning('Supported engines are `cv2` or `pil`, you gived {engine}')
+        return None
 
 
-def save_file(filename, imdata):
-    cv2.imwrite(filename, imdata)
+def save_image(filename, imdata, engine:str = 'cv2', dpi=None):
+    if engine == 'cv2':
+        ensure_dir(filename)
+        cv2.imwrite(filename, imdata)
+    elif engine == 'pil':
+        imdata.save(filename, 'jpeg', dpi=dpi)
+    else:
+        loggin.warning('Supported engines are `cv2` or `pil`, you gived {engine}')
+        return None

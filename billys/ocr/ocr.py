@@ -22,10 +22,16 @@ def ocr_data(image):
 
     # In order to know available configurations, run
     # `tesseract --help-extra` and look for the section OCR options.
+    
+    # Remember to download the most accurrate tesdata for LSTM at
+    # https://github.com/tesseract-ocr/tessdata_best
+    
     # Our configuration specifies
     # * the ocr engine mode (--oem) as 1, that is 'Neural nets LSTM engine only.'
     # * the page segmentation mode (--psm) as 3, that is 'Fully automatic page segmentation, but no OSD. (Default)'
-    custom_config = r'--oem 1 --psm 3 -l ita'
+    # * whether to write or not the elaborated image
+    
+    custom_config = r'--oem 1 --psm 3 -l ita -c tessedit_write_images=true'
 
     return pytesseract.image_to_data(
         image, output_type=pytesseract.Output.DICT, config=custom_config)

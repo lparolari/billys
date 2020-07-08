@@ -4,12 +4,14 @@ import typing
 
 import pandas as pd
 import cv2
+from PIL import Image, ImageEnhance, ImageOps
+import piexif
 
-from billys.dataset import fetch_billys, make_dataframe, read_file, save_file, make_filename
+from billys.dataset import fetch_billys, make_dataframe, read_image, save_image
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
 from billys.checkpoint import save, revert
-from billys.util import get_data_home
+from billys.util import get_data_home, make_filename, ensure_dir
 
 
 def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
@@ -30,11 +32,13 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
 
     steps = [
         ('fetch-billys', lambda *_: fetch(data_home)),
-        ('init-dataframe', lambda dataset: init(dataset, force_good)),
+        ('init-dataframe', lambda dataset: build(dataset, force_good)),
         ('print', show),
         ('dewarp', lambda df: dewarp(df, homography_model_path)),
-        # ('contrast', contrast),
-        # ('ocr', ocr),
+        ('rotation', rotation),
+        ('brightness', brightness),
+        ('contrast', contrast),
+        ('ocr', ocr),
         # ('show-boxed-text', show_boxed_text),
         # ('dump-ocr', dump),
         # ('print', show),
@@ -43,13 +47,16 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     ]
 
     out = None
+    i = 0
 
     for item in steps:
         step, func = item
-        print(f'Performing step {step} ... ')
+        print(f'Performing step {i}: {step} ... ')
 
         prev_out = out
         out = func(prev_out)
+
+        i += 1
 
     print('Pipeline completed.')
 
@@ -74,7 +81,7 @@ def fetch(data_home: typing.Optional[str] = None):
     return fetch_billys(data_home=data_home)
 
 
-def init(dataset, force_good: bool = False) -> pd.DataFrame:
+def build(dataset, force_good: bool = False) -> pd.DataFrame:
     """
     Initialize the dataframe from given dataset.
 
@@ -125,9 +132,10 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     for index, row in df.iterrows():
         filename = row['filename']
         grayscale = row['grayscale']
+        is_pdf = row['is_pdf']
         is_good = row['is_good']
         target_name = row['target_name']
-        imdata = read_file(filename)
+        imdata = read_image(filename, is_pdf=is_pdf)
 
         if not is_good:
             # Dewarp the image only if it is bad.
@@ -138,7 +146,83 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         
         new_filename = make_filename(filename=filename, step='dewarp', cat=target_name)
         new_filename_list.append(new_filename)
-        save_file(new_filename, dewarp_image)
+
+        save_image(new_filename, dewarped_imdata)
+
+    df_out['filename'] = new_filename_list
+
+    return df_out
+
+
+def rotation(df: pd.DataFrame) -> pd.DataFrame:
+    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
+
+    new_filename_list = []
+
+    for index, row in df.iterrows():
+        filename = row['filename']
+        target_name = row['target_name']
+
+        img = Image.open(filename)
+
+                # load the image oriented corrected
+
+        if "exif" in img.info:
+            exif_dict = piexif.load(img.info["exif"])
+
+            if piexif.ImageIFD.Orientation in exif_dict["0th"]:
+                orientation = exif_dict["0th"].pop(piexif.ImageIFD.Orientation)
+
+                if orientation == 2:
+                    img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                elif orientation == 3:
+                    img = img.rotate(180)
+                elif orientation == 4:
+                    img = img.rotate(180).transpose(Image.FLIP_LEFT_RIGHT)
+                elif orientation == 5:
+                    img = img.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                elif orientation == 6:
+                    img = img.rotate(-90, expand=True)
+                elif orientation == 7:
+                    img = img.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
+                elif orientation == 8:
+                    img = img.rotate(90, expand=True)
+
+        new_filename = make_filename(filename=filename, step='rotation', cat=target_name)
+        new_filename_list.append(new_filename)
+
+        ensure_dir(new_filename)
+        save_image(new_filename, img, dpi=(300,300), engine='pil')
+
+    df_out['filename'] = new_filename_list
+
+    return df_out
+
+
+def brightness(df: pd.DataFrame) -> pd.DataFrame:
+    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
+
+    new_filename_list = []
+
+    for index, row in df.iterrows():
+        filename = row['filename']
+        target_name = row['target_name']
+
+        img = Image.open(filename)
+
+        # brightness
+
+        img = ImageEnhance.Brightness(img)
+        
+        brightness = 2.0 # increase brightness
+
+        img = img.enhance(brightness)
+
+        new_filename = make_filename(filename=filename, step='brightness', cat=target_name)
+        new_filename_list.append(new_filename)
+
+        ensure_dir(new_filename)
+        save_image(new_filename, img, dpi=(300,300), engine='pil')
 
     df_out['filename'] = new_filename_list
 
@@ -146,41 +230,31 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
 
 
 def contrast(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Perform the contrast augmentation.
+    df_out = df[[column for column in df.columns if column not in ['filename']]].copy()
 
-    Parameters
-    ----------
-    df
-        The dataset as a dataframe.
-        Requires columns
-         * 'data'
-
-    Returns
-    -------
-    df
-        A new dataframe where the column 'data' have been updated.
-        The update column contains the image with augmented contrast
-        data.
-    """
-    df_out = df[[column for column in df.columns if column != 'data']].copy()
-
-    contrast_list = []
+    new_filename_list = []
 
     for index, row in df.iterrows():
-        imdata = row['data']
+        filename = row['filename']
+        target_name = row['target_name']
 
-        # Convert the background color to gray-
-        converted_image = cv2.cvtColor(imdata, cv2.COLOR_BGR2GRAY)
+        img = Image.open(filename)
 
-        # Augment contrast between white and black with thresholding and
-        # retain only the white part.
-        contrasted_image = cv2.threshold(
-            converted_image, 127, 255, cv2.THRESH_BINARY)[1]
+        # contrast
 
-        contrast_list.append(contrasted_image)
+        img = ImageEnhance.Contrast(img)
 
-    df_out['data'] = contrast_list
+        contrast = 2.0 # increase contrast
+        
+        img = img.enhance(contrast)
+
+        new_filename = make_filename(filename=filename, step='contrast', cat=target_name)
+        new_filename_list.append(new_filename)
+
+        ensure_dir(new_filename)
+        save_image(new_filename, img, dpi=(300,300), engine='pil')
+
+    df_out['filename'] = new_filename_list
 
     return df_out
 
