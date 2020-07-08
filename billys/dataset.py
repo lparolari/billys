@@ -154,7 +154,7 @@ def is_pdf(filename: str) -> bool:
     is_pdf
         True whether the file is a pdf, False otherwise.
     """
-    return filename.endswith('.pdf')
+    return filename.lower().endswith('.pdf')
 
 
 def is_valid(filename: str) -> bool:
@@ -178,6 +178,7 @@ def is_valid(filename: str) -> bool:
         return False
     
     ext = splitted[1]
+    ext = ext.lower()
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
 
 
@@ -223,8 +224,8 @@ def read_image(filename, is_pdf, engine:str = 'cv2'):
 
 
 def save_image(filename, imdata, engine:str = 'cv2', dpi=None):
+    ensure_dir(os.path.dirname(filename))
     if engine == 'cv2':
-        ensure_dir(filename)
         cv2.imwrite(filename, imdata)
     elif engine == 'pil':
         imdata.save(filename, 'jpeg', dpi=dpi)
