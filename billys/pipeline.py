@@ -39,7 +39,7 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
         ('brightness', brightness),
         ('contrast', contrast),
         ('ocr', ocr),
-        # ('show-boxed-text', show_boxed_text),
+        ('show-boxed-text', show_boxed_text),
         # ('dump-ocr', dump),
         # ('print', show),
         # ('feat-preproc', skip),
@@ -281,7 +281,7 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
 
     for index, row in df.iterrows():
         filename = row['filename']
-        imdata = row['data']
+        imdata = read_image(filename, is_pdf=False)
 
         ocr_dict = ocr_data(imdata)
         dict_list.append(ocr_dict)
@@ -362,8 +362,8 @@ def show_boxed_text(df: pd.DataFrame):
 
     for index, row in df.iterrows():
         ocr_dict = row['ocr']
-        imdata = row['data']
         filename = row['filename']
+        imdata = read_image(filename, is_pdf=False)
 
         n_boxes = len(ocr_dict['text'])
         for i in range(n_boxes):
