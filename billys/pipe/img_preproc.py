@@ -48,6 +48,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         is_pdf = row['is_pdf']
         is_good = row['is_good']
         target_name = row['target_name']
+        subset = row['subset']
         imdata = read_image(filename, is_pdf=is_pdf)
 
         logging.debug(f'Dewarping image {filename}')
@@ -59,7 +60,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
             dewarped_imdata = imdata
 
         new_filename = make_filename(
-            filename=filename, step='dewarp', cat=target_name)
+            filename=filename, step='dewarp', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
         save_image(new_filename, dewarped_imdata)
@@ -93,6 +94,7 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
 
     for index, row in df.iterrows():
         filename = row['filename']
+        subset = row['subset']
         target_name = row['target_name']
 
         img = Image.open(filename)
@@ -125,7 +127,7 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
                     img = img.rotate(90, expand=True)
 
         new_filename = make_filename(
-            filename=filename, step='rotation', cat=target_name)
+            filename=filename, step='rotation', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)
@@ -160,6 +162,7 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
 
     for index, row in df.iterrows():
         filename = row['filename']
+        subset = row['subset']
         target_name = row['target_name']
 
         img = Image.open(filename)
@@ -175,7 +178,7 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
         img = img.enhance(brightness)
 
         new_filename = make_filename(
-            filename=filename, step='brightness', cat=target_name)
+            filename=filename, step='brightness', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)
@@ -210,6 +213,7 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
 
     for index, row in df.iterrows():
         filename = row['filename']
+        subset = row['subset']
         target_name = row['target_name']
 
         img = Image.open(filename)
@@ -225,7 +229,7 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
         img = img.enhance(contrast)
 
         new_filename = make_filename(
-            filename=filename, step='contrast', cat=target_name)
+            filename=filename, step='contrast', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
         ensure_dir(new_filename)

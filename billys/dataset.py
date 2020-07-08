@@ -74,7 +74,7 @@ def fetch_billys(data_home=None,
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
 
 
-def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
+def make_dataframe(dataset: sklearn.utils.Bunch, force_good: bool = False, subset: str = 'train'):
     """
     Create a dataframe from the given dataset.
 
@@ -96,10 +96,11 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
          * 'target_name', the target name,
          * 'grayscale', whether the image is in greyscale,
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
-         * 'is_pdf', whether the image file is in pdf format-
+         * 'is_pdf', whether the image file is in pdf format,
+         * 'subset', the dataset subset, one in 'train', 'test'.
     """
-    df = pd.DataFrame(columns=[
-                      'filename', 'target', 'target_name', 'grayscale', 'good', 'is_pdf', 'is_valid'])
+    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'grayscale',
+                               'is_good', 'is_pdf', 'is_valid', 'subset'])
 
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
@@ -110,6 +111,7 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
                      for filename in dataset.filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
     df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
+    df['subset'] = subset
 
     # Drop all invalid rows
     indexes = df[df['is_valid'] == True].index

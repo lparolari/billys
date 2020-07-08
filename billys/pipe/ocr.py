@@ -75,6 +75,7 @@ def show_boxed_text(df: pd.DataFrame):
         ocr_dict = row['ocr']
         filename = row['filename']
         target_name = row['target_name']
+        subset = row['subset']
         imdata = read_image(filename, is_pdf=False)
 
         logging.debug(f'Boxing image {filename}')
@@ -90,7 +91,7 @@ def show_boxed_text(df: pd.DataFrame):
         img = cv2.resize(imdata, (500, 700))
 
         new_filename = make_filename(
-            filename=filename, step='boxed', cat=target_name)
+            filename=filename, step='boxed', subset=subset, cat=target_name)
 
         ensure_dir(new_filename)
         save_image(new_filename, img)

@@ -11,7 +11,7 @@ import piexif
 from billys.dataset import fetch_billys, make_dataframe
 
 
-def fetch(data_home: typing.Optional[str] = None):
+def fetch(data_home: typing.Optional[str] = None, subset: str = 'train'):
     """
     Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
     return it.
@@ -21,15 +21,18 @@ def fetch(data_home: typing.Optional[str] = None):
     data_home: default: None
         The directory from which retrieve the dataset. See :func:`billys.util.get_data_home`.
 
+    subset
+        The subset of dataset to load. Can be one of 'train', 'test'.
+
     Returns
     -------
     dataset
         The dataset, see :func:`billys.dataset.fetch_billys`.
     """
-    return fetch_billys(data_home=data_home)
+    return fetch_billys(data_home=data_home, subset=subset)
 
 
-def build(dataset, force_good: bool = False) -> pd.DataFrame:
+def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFrame:
     """
     Initialize the dataframe from given dataset.
 
@@ -37,6 +40,9 @@ def build(dataset, force_good: bool = False) -> pd.DataFrame:
     ----------
     dataset: required
         The dataset loaded with :func:`billys.dataset.fetch_billys`.
+
+    subset
+        The subset of loaded dataset. Can be one of 'train', 'test'.
 
     force_good: default: False
         Force all the samples in the dataframe to be marked as good and skip
@@ -47,4 +53,4 @@ def build(dataset, force_good: bool = False) -> pd.DataFrame:
     df
         A new dataframe built with :func:`billys.dataset.make_dataframe`.
     """
-    return make_dataframe(dataset=dataset, force_good=force_good)
+    return make_dataframe(dataset=dataset, force_good=force_good, subset=subset)

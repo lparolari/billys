@@ -45,20 +45,24 @@ def get_data_tmp(data_tmp=None):
     return data_tmp
 
 
-def make_filename(filename, cat, step, data_home=None):
+def make_filename(filename, cat, subset, step, data_home=None):
     """
     Returns
     -------
     path
         A path to a file created with this parttern
-            DATA_HOME/step/train/cat/basename(filename)
+            DATA_HOME/step/subset/cat/basename(filename)
     """
     name_ext = os.path.basename(filename)
     name_only = os.path.splitext(name_ext)[0]
-    return os.path.join(get_data_home(data_home=data_home), step, 'train', cat, f'{name_only}.jpg')
+    return os.path.join(get_data_home(data_home=data_home), step, subset, cat, f'{name_only}.jpg')
 
 
 def ensure_dir(filename: str):
+    """
+    Ensures that the directory obtained with :func:`os.path.dirname`
+    exists, and if not, create that directory.
+    """
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
 
