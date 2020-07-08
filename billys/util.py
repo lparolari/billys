@@ -1,3 +1,4 @@
+import logging
 import os
 import os.path
 import time
@@ -73,3 +74,25 @@ def now():
 def get_elapsed_time(start_time, end_time):
     return Decimal(end_time - start_time).quantize(Decimal('.001'),
                                                    rounding=ROUND_HALF_UP)
+
+
+def get_log_level(level: str) -> int:
+    """
+    Get logging level from string.
+    """
+    level = level.lower().strip()
+
+    if level == 'critical':
+        return logging.CRITICAL
+    if level == 'fatal':
+        return logging.FATAL
+    if level == 'error':
+        return logging.ERROR
+    if level == 'warning' or level == 'warn':
+        return logging.WARNING
+    if level == 'info':
+        return logging.INFO
+    if level == 'debug':
+        return logging.DEBUG
+
+    return logging.NOTSET
