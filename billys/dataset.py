@@ -110,50 +110,6 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     return df
 
 
-def read_file(df_row):
-    """
-    Read the file data if it is supported and return it. If the file
-    is not supported, we ignore it.
-
-    Parameters
-    ----------
-    df_row: 
-        A dataframe row containing the image metadata.
-        Required columns are
-            'filename', 'is_valid', 'is_pdf'
-
-    Returns
-    -------
-    imdata
-        The image data encoded with cv2 format, i.e., a list with shape
-        [w, h, number of channels].
-    """
-    
-    filename = df_row['filename']
-    is_valid = df_row['is_valid']
-    is_pdf = df_row['is_pdf']
-
-    if not is_valid:
-        logging.warning(f'The file {filename} is not supported. Skipping.')
-    else:
-        if is_pdf
-
-            # Convert pdf to image and the store the image data.
-            pages = convert_from_path(filename)
-            tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
-            os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
-            for page in pages:
-                page.save(tmp_filename, 'JPEG')
-                # As specification, we need only the first page.
-                break
-            return cv2.imread(tmp_filename)
-
-        else:
-            # Directly load the image data. We do not check the 
-            # image format because we assume that it is valid.
-            return cv2.imread(filename)
-
-
 def is_good(filename: str, force: bool) -> bool:
     """
     Verify whether a file is good or not, i.e., it does not need
@@ -215,3 +171,46 @@ def is_valid(filename: str) -> bool:
     
     ext = splitted[1]
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
+
+
+def read_file(filename, is_valid, is_pdf):
+    """
+    Read the file data if it is supported and return it. If the file
+    is not supported, we ignore it.
+
+    Parameters
+    ----------
+    filename
+    is_valid
+    is_pdf
+
+    Returns
+    -------
+    imdata
+        The image data encoded with cv2 format, i.e., a list with shape
+        [w, h, number of channels].
+    """
+
+    if not is_valid:
+        logging.warning(f'The file {filename} is not supported. Skipping.')
+    else:
+        if is_pdf
+
+            # Convert pdf to image and the store the image data.
+            pages = convert_from_path(filename)
+            tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
+            os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
+            for page in pages:
+                page.save(tmp_filename, 'JPEG')
+                # As specification, we need only the first page.
+                break
+            return cv2.imread(tmp_filename)
+
+        else:
+            # Directly load the image data. We do not check the 
+            # image format because we assume that it is valid.
+            return cv2.imread(filename)
+
+
+def save_file(filename, imdata):
+    cv2.imwrite(filename, imdata)

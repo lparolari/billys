@@ -41,3 +41,16 @@ def get_data_tmp(data_tmp=None):
         data_tmp = os.path.join(data_home, '.tmp')
 
     return data_tmp
+
+
+def make_filename(filename, cat, step, data_home=None):
+    """
+    Returns
+    -------
+    path
+        A path to a file created with this parttern
+            DATA_HOME/step/train/cat/basename(filename)
+    """
+    name_ext = os.path.basename(filename)
+    name_only = os.path.splitext(name_ext)[0]
+    return os.path.join(get_data_home(data_home=data_home), step, 'train', cat, f'{name_only}.jpg')
