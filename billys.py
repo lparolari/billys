@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from billys.pipeline import pipeline
+from billys.pipeline import pipeline, make_steps, make_default_config
 
 if __name__ == "__main__":
 
@@ -19,4 +19,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    pipeline()
+    pipeline(make_steps([
+        'fetch-billys',
+        'init-dataframe',
+        'print',
+        'dewarp',
+        'rotation',
+        'brightness',
+        'fetch-checkpoint',
+        'ocr',
+        'show-boxed-text',
+    ], {**make_default_config()}))

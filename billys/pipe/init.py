@@ -11,7 +11,7 @@ import piexif
 from billys.dataset import fetch_billys, make_dataframe
 
 
-def fetch(data_home: typing.Optional[str] = None, subset: str = 'train'):
+def fetch(data_home: typing.Optional[str] = None, name: str = 'billys', subset: str = 'train'):
     """
     Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
     return it.
@@ -29,7 +29,7 @@ def fetch(data_home: typing.Optional[str] = None, subset: str = 'train'):
     dataset
         The dataset, see :func:`billys.dataset.fetch_billys`.
     """
-    return fetch_billys(data_home=data_home, subset=subset)
+    return fetch_billys(data_home=data_home, name=name, subset=subset)
 
 
 def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFrame:

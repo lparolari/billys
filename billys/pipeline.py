@@ -1,3 +1,11 @@
+"""
+Module implementing the pipeline.
+
+Plese use only **kebab-cased** idenfiers for pipeline steps
+(https://it.wikipedia.org/wiki/Kebab_case). Other types of case could
+compromise the saving and loading functions for checkpoints.
+"""
+
 import logging
 import os
 
@@ -13,37 +21,103 @@ from billys.pipe.shared import dump, show, skip
 from billys.util import get_elapsed_time, now
 
 
-def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
-             homography_model_path: str = os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
-             force_good: bool = True):
+"""Available pipeline stesp, to be combined and used with the :func:`pipeline`."""
+PIPELINE_AVAILABLE_STEPS = {
+    'fetch-billys': lambda *_: fetch(data_home=data_home),
+    'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=dataset_name),
+    'init-dataframe': lambda dataset: build(dataset, force_good=force_good),
+    'print': show,
+    'dewarp': lambda df: dewarp(df, homography_model_path=homography_model_path),
+    'rotation': rotation,
+    'brightness': brightness,
+    'contrast': contrast,
+    'ocr': ocr,
+    'show-boxed-text': show_boxed_text,
+}
+
+
+def get_all_steps() -> List[str]:
+    """
+    Returns
+    -------
+    steps
+        The list of all available steps in pipeline.
+    """
+    return PIPELINE_AVAILABLE_STEPS.keys()
+
+
+def get_default_steps() -> List[str]:
+    """
+    Returns
+    -------
+    steps
+        The list of the default step to perform for a full pipeline.
+    """
+    return [
+        'fetch-billys',
+        'init-dataframe',
+        'print',
+        'dewarp',
+        'rotation',
+        'brightness',
+        'fetch-checkpoint',
+        'ocr',
+        'show-boxed-text',
+    ]
+
+
+def get_default_config():
+    """
+    Returns
+    -------
+    config
+        A dict with a default value for each config.
+        Available configurations are
+         * 'data_home'
+         * 'dataset_name'
+         * 'force_good'
+         * 'homography_model_path'
+    """
+    return {
+        'data_home': os.path.join(os.getcwd(), 'dataset'),
+        'dataset_name': 'billys',
+        'force_good': True,
+        'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+    }
+
+
+def make_steps(step_list, config=make_default_config()):
+    """
+    Build a list of pairs where the first component is the step name, while the
+    second component is the function to run for that step.
+
+    Returns
+    -------
+    to_do_steps
+        A list of step.
+    """
+    data_home = config['data_home']
+    dataset_name = config['dataset_name']
+    force_good = config['force_good']
+    homography_model_path = config['homography_model_path']
+
+    to_do_steps = []
+
+    for step in step_list:
+        to_do_steps.append(tuple((step, PIPELINE_AVAILABLE_STEPS[step])))
+
+    return to_do_steps
+
+
+def pipeline(steps):
     """
     Run the training pipeline.
 
     Parameters
     ----------
-    TODO
+    steps
+        List of steps, i.e., pairs (name, func).
     """
-
-    # Plese use only **kebab-cased** idenfiers for pipeline steps
-    # (https://it.wikipedia.org/wiki/Kebab_case)
-    # Other types of case could compromise the saving and loading
-    # functions for checkpoints.
-
-    steps = [
-        ('fetch-billys', lambda *_: fetch(data_home)),
-        ('init-dataframe', lambda dataset: build(dataset, force_good)),
-        ('print', show),
-        ('dewarp', lambda df: dewarp(df, homography_model_path)),
-        ('rotation', rotation),
-        ('brightness', brightness),
-        ('contrast', contrast),
-        ('ocr', ocr),
-        ('show-boxed-text', show_boxed_text),
-        # ('dump-ocr', dump),
-        # ('print', show),
-        # ('feat-preproc', skip),
-        # ('train-classifier', skip)
-    ]
 
     out = None
     i = 0

@@ -17,6 +17,7 @@ from billys.util import ensure_dir, get_data_home, get_data_tmp
 
 
 def fetch_billys(data_home=None,
+                 name='billys',
                  subset='train',
                  description=None,
                  categories=None,
@@ -34,6 +35,9 @@ def fetch_billys(data_home=None,
         Specify a download and cache folder for the datasets. If None,
         all billys data is stored in default subfolder.
 
+    name: optiona, default: 'billys'
+        The dataset name.
+
     subset : 'train' or 'test', 'all', optional
         Select the dataset to load: 'train' for the training set, 'test'
         for the test set, 'all' for both, with shuffled ordering.
@@ -47,7 +51,7 @@ def fetch_billys(data_home=None,
     """
 
     data_home = get_data_home(data_home=data_home)
-    target_dir = os.path.join(data_home, 'billys')
+    target_dir = os.path.join(data_home, name)
 
     train_path = os.path.join(target_dir, 'train')
     test_path = os.path.join(target_dir, 'test')
