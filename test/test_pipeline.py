@@ -7,7 +7,8 @@ import unittest
 
 import pandas as pd
 
-from billys.pipeline import show, skip, init, fetch
+from billys.pipe.init import build, fetch
+from billys.pipe.shared import show, skip
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
@@ -42,9 +43,9 @@ class PipelineTest(unittest.TestCase):
         dataset = fetch('/tmp')
         self.assertEqual(dataset.filenames, ['/tmp/billys/train/cat1/1.png'])
 
-    def test_init(self):
+    def test_build(self):
         dataset = fetch('/tmp')
-        df = init(dataset, True)
+        df = build(dataset, True)
         df.equals(pd.DataFrame(data={
                   'filename': ['/tmp/billys/train/cat1/1.png'],
                   'target': [0],
