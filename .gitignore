@@ -143,7 +143,5 @@ venv/
 # visual studio code config file
 .vscode/*
 
-dataset/
-
 # tesseract temp files
 *.tif
