@@ -3,11 +3,13 @@ from enum import Enum
 import typing
 
 import pandas as pd
+import cv2
 
 from billys.dataset import fetch_billys, make_dataframe
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
 from billys.checkpoint import save, revert
+from billys.util import get_data_home
 
 
 def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
@@ -21,17 +23,19 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     TODO
     """
 
-    # Plese use only **kebab-cased** idenfiers for pipeline steps 
+    # Plese use only **kebab-cased** idenfiers for pipeline steps
     # (https://it.wikipedia.org/wiki/Kebab_case)
     # Other types of case could compromise the saving and loading
     # functions for checkpoints.
 
     steps = [
-        ('init', lambda *_: init(data_home, force_good)),
+        ('fetch-billys', lambda *_: fetch(data_home)),
+        ('init-dataframe', lambda dataset: init(dataset, force_good)),
         ('print', show),
         ('dewarp', lambda df: dewarp(df, homography_model_path)),
         ('contrast', contrast),
         ('ocr', ocr),
+        ('show-boxed-text', show_boxed_text),
         ('dump-ocr', dump),
         ('print', show),
         ('feat-preproc', skip),
@@ -52,33 +56,32 @@ def pipeline(data_home: str = os.path.join(os.getcwd(), 'dataset'),
     return out
 
 
-def show(df: pd.DataFrame) -> pd.DataFrame:
+def fetch(data_home: typing.Optional[str] = None):
     """
-    Print the dataframe as a side effect and return it.
-
-    Parameters
-    ----------
-    df
-        The dataset as a dataframe.
-
-    Returns
-    -------
-    df
-        The dataframe itself without changes.
-    """
-    print(df)
-    return df
-
-
-def init(data_home: typing.Optional[str], force_good: bool = False) -> pd.DataFrame:
-    """
-    Initialize the dataframe with dataset read from `data_home` with
-    the funcrion `billys.dataset.fetch_billys`.
+    Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
+    return it.
 
     Parameters
     ----------
     data_home: default: None
         The directory from which retrieve the dataset. See :func:`billys.util.get_data_home`.
+
+    Returns
+    -------
+    dataset
+        The dataset, see :func:`billys.dataset.fetch_billys`.
+    """
+    return fetch_billys(data_home=data_home)
+
+
+def init(dataset, force_good: bool = False) -> pd.DataFrame:
+    """
+    Initialize the dataframe from given dataset.
+
+    Parameters
+    ----------
+    dataset: required
+        The dataset loaded with :func:`billys.dataset.fetch_billys`.
 
     force_good: default: False
         Force all the samples in the dataframe to be marked as good and skip
@@ -89,8 +92,7 @@ def init(data_home: typing.Optional[str], force_good: bool = False) -> pd.DataFr
     df
         A new dataframe built with :func:`billys.dataset.make_dataframe`.
     """
-    return make_dataframe(
-        fetch_billys(data_home=data_home), force_good=force_good)
+    return make_dataframe(dataset=dataset, force_good=force_good)
 
 
 def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
@@ -137,9 +139,43 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
 
 
 def contrast(df: pd.DataFrame) -> pd.DataFrame:
-    # TODO: docs and implementation
-    # The identity function, for now.
-    return df
+    """
+    Perform the contrast augmentation.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+        Requires columns
+         * 'data'
+
+    Returns
+    -------
+    df
+        A new dataframe where the column 'data' have been updated.
+        The update column contains the image with augmented contrast
+        data.
+    """
+    df_out = df[[column for column in df.columns if column != 'data']].copy()
+
+    contrast_list = []
+
+    for index, row in df.iterrows():
+        imdata = row['data']
+
+        # Convert the background color to gray-
+        converted_image = cv2.cvtColor(imdata, cv2.COLOR_BGR2GRAY)
+
+        # Augment contrast between white and black with thresholding and
+        # retain only the white part.
+        contrasted_image = cv2.threshold(
+            converted_image, 127, 255, cv2.THRESH_BINARY)[1]
+
+        contrast_list.append(contrasted_image)
+
+    df_out['data'] = contrast_list
+
+    return df_out
 
 
 def ocr(df: pd.DataFrame) -> pd.DataFrame:
@@ -154,12 +190,11 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     Returns
     ------- 
     df
-        A new dataframe where the column `data` contains a dict with extracted features from image.
-        The new column is a dict with keys the following keys
-            'level', 'page_num', 'block_num', 'par_num', 'line_num', 'word_num', 
-            'left', 'top', 'width', 'height', 'conf', 'text'
+        A new dataframe with a new column `ocr` that contains a dict
+        with extracted features from image. The type of every value
+        in this column is documented at :func:`billys.ocr.ocr.ocr_data`.
     """
-    df_out = df[[column for column in df.columns if column != 'data']].copy()
+    df_out = df.copy()
 
     dict_list = []
 
@@ -167,15 +202,30 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
         filename = row['filename']
         imdata = row['data']
 
-        print('Processing image {} ...'.format(filename))
-
         ocr_dict = ocr_data(imdata)
-
         dict_list.append(ocr_dict)
 
-    df_out['data'] = dict_list
+    df_out['ocr'] = dict_list
 
     return df_out
+
+
+def show(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Print the dataframe as a side effect and return it.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe itself without changes.
+    """
+    print(df)
+    return df
 
 
 def skip(x):
@@ -202,4 +252,51 @@ def dump(df: pd.DataFrame) -> pd.DataFrame:
     """
     filename = save('dump_ocr', df)
     print(f'Dumped object into {filename}')
+    return df
+
+
+def show_boxed_text(df: pd.DataFrame):
+    """
+    Save iamges with boxed words as a side effect and return the
+    dataframe without changes. Images are saved in the `boxed`
+    directory inside the path returned by :func:`get_data_home`.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+        Requires the columns
+         * 'data', the image with contrast and illumination;
+         * 'ocr', the dict with ocr features;
+         * 'filename', the original image filename.
+
+    Returns
+    -------
+    df
+        The dataframe without changes.
+    """
+
+    boxed_images_path = os.path.join(get_data_home(), 'boxed')
+    os.makedirs(boxed_images_path, exist_ok=True)
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        imdata = row['data']
+        filename = row['filename']
+
+        n_boxes = len(ocr_dict['text'])
+        for i in range(n_boxes):
+            if int(ocr_dict['conf'][i]) > 60:
+                (x, y, w, h) = (ocr_dict['left'][i], ocr_dict['top']
+                                [i], ocr_dict['width'][i], ocr_dict['height'][i])
+                imdata = cv2.rectangle(
+                    imdata, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        imS = cv2.resize(imdata, (500, 700))
+
+        name = os.path.basename(filename).split('.')[0] + '.jpg'
+        new_filename = os.path.join(boxed_images_path, name)
+
+        cv2.imwrite(new_filename, imS)
+
     return df

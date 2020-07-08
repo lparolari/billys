@@ -11,7 +11,7 @@ import sklearn
 import sklearn.datasets
 from pdf2image import convert_from_path
 
-from billys.util import get_data_home
+from billys.util import get_data_home, get_data_tmp
 
 
 def fetch_billys(data_home=None,
@@ -40,7 +40,7 @@ def fetch_billys(data_home=None,
     -------
     dataset
         If `subset` is one of 'train', 'test' then the dataset in `scikit.utils.Bunch` is returned.
-        Otherwise it is returned a dict with key train and test and values are the two subset 
+        Otherwise it is returned a dict with key train and test and values are the two subset
         with `scikit.utils.Bunch` format.
     """
 
@@ -79,8 +79,8 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
     Parameters
     ----------
     dataset: scikit.utils.Bunch, required
-        #sklearn.utils.Bunch
         See https://scikit-learn.org/stable/modules/generated/sklearn.utils.Bunch.html
+
     force_good: bool, optional, default: False
         If True all dataset samples are marked as good, and they will skip some
         pipeline steps like dewarping an contrast augmentation.
@@ -133,12 +133,18 @@ def read_file(filename: str):
     filelower = filename.lower()
 
     if filelower.endswith('pdf'):
+        # Convert pdf to image and the store the image data.
         pages = convert_from_path(filename)
+        tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
+        os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
         for page in pages:
-            page.save('C:\\source\\GIT\\billys\\tmp\\pdf.jpg', 'JPEG')
+            page.save(tmp_filename, 'JPEG')
+            # As specification, we need only the first page.
             break
-        return cv2.imread('/tmp/pdf.jpg')
+        return cv2.imread(tmp_filename)
+
     elif filelower.endswith('jpg') or filelower.endswith('png'):
+        # Directly load the image data.
         return cv2.imread(filename)
     else:
         raise AssertionError('Supported file types are {}, you gived {}.'.format(

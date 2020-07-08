@@ -23,3 +23,21 @@ def get_data_home(data_home=None):
         return f'{os.path.join(user_home, BILLYS_WORKSPACE_NAME)}'
 
     return data_home
+
+
+def get_data_tmp(data_tmp=None):
+    """
+    Returns
+    ------- 
+    path: str
+        `data_tmp` if it is not None, otherwise a path to a directory tmp directory.
+    """
+
+    # To be system agnostic, for now, we create the tmp directory inside the data folder
+    # obtained with `get_data_home` and appending the dir `.tmp`.
+
+    if data_tmp is None:
+        data_home = get_data_home(data_home=data_tmp)
+        data_tmp = os.path.join(data_home, '.tmp')
+
+    return data_tmp
