@@ -16,24 +16,10 @@ import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
 from billys.pipe.img_preproc import brightness, contrast, dewarp, rotation
-from billys.pipe.init import build, fetch
+from billys.pipe.init import build, fetch, pickle
 from billys.pipe.ocr import ocr, show_boxed_text
 from billys.pipe.shared import dump, show, skip
-from billys.util import get_elapsed_time, now
-
-"""Available pipeline stesp, to be combined and used with the :func:`pipeline`."""
-PIPELINE_AVAILABLE_STEPS = {
-    'fetch-billys': lambda *_: fetch(data_home=data_home),
-    'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=dataset_name),
-    'init-dataframe': lambda dataset: build(dataset, force_good=force_good),
-    'print': show,
-    'dewarp': lambda df: dewarp(df, homography_model_path=homography_model_path),
-    'rotation': rotation,
-    'brightness': brightness,
-    'contrast': contrast,
-    'ocr': ocr,
-    'show-boxed-text': show_boxed_text,
-}
+from billys.util import get_elapsed_time, now, get_data_home
 
 
 def get_all_steps() -> List[str]:
@@ -76,7 +62,7 @@ def get_default_steps() -> List[str]:
     ]
 
 
-def get_config(data_home=None, dataset_name=None, force_good=None, homography_model_path=None):
+def get_config(data_home=None, checkpoint_name=None, dump_name=None, force_good=None, homography_model_path=None):
     """
     Returns
     -------
@@ -84,13 +70,15 @@ def get_config(data_home=None, dataset_name=None, force_good=None, homography_mo
         A dict with a default value for each config.
         Available configurations are
          * 'data_home'
-         * 'dataset_name'
+         * 'checkpoint_name'
+         * 'dump_name'
          * 'force_good'
          * 'homography_model_path'
     """
     return {
-        'data_home': data_home or os.path.join(os.getcwd(), 'dataset'),
-        'dataset_name': dataset_name or 'billys',
+        'data_home': get_data_home(data_home),
+        'checkpoint_name': checkpoint_name or 'billys',
+        'dump_name': dump_name or 'dataset.pkl',
         'force_good': force_good or True,
         'homography_model_path': homography_model_path or os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
     }
@@ -107,7 +95,8 @@ def make_steps(step_list, config=get_config()):
         A list of step.
     """
     data_home = config['data_home']
-    dataset_name = config['dataset_name']
+    checkpoint_name = config['checkpoint_name']
+    dump_name = config['dump_name']
     force_good = config['force_good']
     homography_model_path = config['homography_model_path']
 
@@ -115,7 +104,8 @@ def make_steps(step_list, config=get_config()):
 
     available_steps = {
         'fetch-billys': lambda *_: fetch(data_home=data_home),
-        'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=dataset_name),
+        'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=checkpoint_name),
+        'fetch-dump': lambda fn, *_: pickle(data_home=data_home, name=dump_name),
         'init-dataframe': lambda dataset: build(dataset, force_good=force_good),
         'print': show,
         'dewarp': lambda df: dewarp(df, homography_model_path=homography_model_path),

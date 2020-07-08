@@ -2,6 +2,7 @@
 Dataset initialization pipeline steps
 """
 import typing
+import os
 
 import pandas as pd
 import cv2
@@ -9,6 +10,7 @@ from PIL import Image, ImageEnhance, ImageOps
 import piexif
 
 from billys.dataset import fetch_billys, make_dataframe
+from billys.util import read_file, get_data_home
 
 
 def fetch(data_home: typing.Optional[str] = None, name: str = 'billys', subset: str = 'train'):
@@ -54,3 +56,7 @@ def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFr
         A new dataframe built with :func:`billys.dataset.make_dataframe`.
     """
     return make_dataframe(dataset=dataset, force_good=force_good, subset=subset)
+
+
+def pickle(data_home: typing.Optional[str] = None, name: str = 'dataset.pkl'):
+    return read_file(os.path.join(get_data_home(data_home=data_home), name), is_pkl=True)

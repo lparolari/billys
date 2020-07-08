@@ -3,6 +3,7 @@ import os
 import os.path
 import time
 from decimal import ROUND_HALF_UP, Decimal
+from pickle import load
 
 BILLYS_WORKSPACE_NAME = '.billys'
 
@@ -96,3 +97,11 @@ def get_log_level(level: str) -> int:
         return logging.DEBUG
 
     return logging.NOTSET
+
+
+def read_file(filename, is_pkl: bool = False):
+    if filename:
+        return load(open(filename, 'rb'))
+    else:
+        logging.warning('File type not supported.')
+        return None
