@@ -15,9 +15,10 @@ import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
-from billys.pipe.img_preproc import brightness, contrast, dewarp, rotation
-from billys.pipe.init import build, fetch, pickle
-from billys.pipe.ocr import ocr, show_boxed_text
+from billys.steps import dump, show, skip
+from billys.steps import build, fetch, pickle
+from billys.steps import brightness, contrast, dewarp, rotation
+from billys.steps import ocr, show_boxed_text
 from billys.pipe.shared import dump, show, skip
 from billys.util import get_elapsed_time, now, get_data_home
 
@@ -59,6 +60,7 @@ def get_default_steps() -> List[str]:
         'brightness',
         'ocr',
         'show-boxed-text',
+        # TODO: complete pipeline
     ]
 
 

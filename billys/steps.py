@@ -1,16 +1,125 @@
 """
-Image preprocessing pipeline steps
+Common and shared pipeline steps.
 """
+
+from billys.util import ensure_dir, get_data_home, make_filename, read_file
 import logging
+import os
+import typing
 
 import cv2
 import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
-from billys.dataset import read_image, save_image
+from billys.checkpoint import save
+from billys.dataset import fetch_billys, make_dataframe, read_image, save_image
 from billys.dewarp.dewarp import dewarp_image, make_model
-from billys.util import ensure_dir, make_filename
+from billys.ocr.ocr import ocr_data
+
+
+def show(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Print the dataframe as a side effect and return it.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe itself without changes.
+    """
+    print(df)
+    return df
+
+
+def skip(x):
+    """
+    The identity function.
+    """
+    return x
+
+
+def dump(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Dump the dataframe on file as a side effect with :func:`billys.checkpoint.save`,
+    and returns the dataframe without changes.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    -------
+    df
+        The dataframe without changes.
+    """
+    filename = save('dump_ocr', df)
+    print(f'Dumped object into {filename}')
+    return df
+
+
+"""
+Dataset initialization pipeline steps
+"""
+
+
+def fetch(data_home: typing.Optional[str] = None, name: str = 'billys', subset: str = 'train'):
+    """
+    Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
+    return it.
+
+    Parameters
+    ----------
+    data_home: default: None
+        The directory from which retrieve the dataset. See :func:`billys.util.get_data_home`.
+
+    subset
+        The subset of dataset to load. Can be one of 'train', 'test'.
+
+    Returns
+    -------
+    dataset
+        The dataset, see :func:`billys.dataset.fetch_billys`.
+    """
+    return fetch_billys(data_home=data_home, name=name, subset=subset)
+
+
+def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFrame:
+    """
+    Initialize the dataframe from given dataset.
+
+    Parameters
+    ----------
+    dataset: required
+        The dataset loaded with :func:`billys.dataset.fetch_billys`.
+
+    subset
+        The subset of loaded dataset. Can be one of 'train', 'test'.
+
+    force_good: default: False
+        Force all the samples in the dataframe to be marked as good and skip
+        some pipeline steps like dewarping and contrast aumentation.
+
+    Returns
+    -------
+    df
+        A new dataframe built with :func:`billys.dataset.make_dataframe`.
+    """
+    return make_dataframe(dataset=dataset, force_good=force_good, subset=subset)
+
+
+def pickle(data_home: typing.Optional[str] = None, name: str = 'dataset.pkl'):
+    return read_file(os.path.join(get_data_home(data_home=data_home), name), is_pkl=True)
+
+
+"""
+Image preprocessing pipeline steps
+"""
 
 
 def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
@@ -238,3 +347,93 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
     df_out['filename'] = new_filename_list
 
     return df_out
+
+
+"""
+Ocr pipeline steps.
+"""
+
+
+def ocr(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Perform the ocr on images data.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+
+    Returns
+    ------- 
+    df
+        A new dataframe with a new column `ocr` that contains a dict
+        with extracted features from image. The type of every value
+        in this column is documented at :func:`billys.ocr.ocr.ocr_data`.
+    """
+    df_out = df.copy()
+
+    dict_list = []
+
+    for index, row in df.iterrows():
+        filename = row['filename']
+        imdata = read_image(filename, is_pdf=False)
+
+        logging.debug(f'Performing ocr on image {filename}')
+
+        ocr_dict = ocr_data(imdata)
+        dict_list.append(ocr_dict)
+
+    df_out['ocr'] = dict_list
+
+    return df_out
+
+
+def show_boxed_text(df: pd.DataFrame):
+    """
+    Save iamges with boxed words as a side effect and return the
+    dataframe without changes. Images are saved in the `boxed`
+    directory inside the path returned by :func:`get_data_home`.
+
+    Parameters
+    ----------
+    df
+        The dataset as a dataframe.
+        Requires the columns
+         * 'ocr', the dict with ocr features;
+         * 'filename', the original image filename.
+
+    Returns
+    -------
+    df
+        The dataframe without changes.
+    """
+
+    boxed_images_path = os.path.join(get_data_home(), 'boxed')
+    os.makedirs(boxed_images_path, exist_ok=True)
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        filename = row['filename']
+        target_name = row['target_name']
+        subset = row['subset']
+        imdata = read_image(filename, is_pdf=False)
+
+        logging.debug(f'Boxing image {filename}')
+
+        n_boxes = len(ocr_dict['text'])
+        for i in range(n_boxes):
+            if int(ocr_dict['conf'][i]) > 60:
+                (x, y, w, h) = (ocr_dict['left'][i], ocr_dict['top']
+                                [i], ocr_dict['width'][i], ocr_dict['height'][i])
+                imdata = cv2.rectangle(
+                    imdata, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+        img = cv2.resize(imdata, (500, 700))
+
+        new_filename = make_filename(
+            filename=filename, step='boxed', subset=subset, cat=target_name)
+
+        ensure_dir(new_filename)
+        save_image(new_filename, img)
+
+    return df
