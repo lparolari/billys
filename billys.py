@@ -1,6 +1,7 @@
 import argparse
 import ast
 import logging
+import os
 
 from billys.pipeline import pipeline, make_steps, make_config, get_default_steps
 from billys.util import get_log_level
@@ -15,11 +16,15 @@ def parse_config(args):
 
     try:
         if os.path.isfile(config):
+            logging.debug(f'Opening config file {config}')
             with open(config, 'r') as f:
                 return ast.literal_eval(f.read())
         else:
+            logging.debug(f'Reading configurations from arg')
             return ast.literal_eval(config)
-    except:
+    except IOError as e:
+        logging.error(f'Configuration reading failed, using defaults')
+        logging.error(e)
         return {}
 
 

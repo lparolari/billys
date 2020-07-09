@@ -20,7 +20,9 @@ class PipelineTest(unittest.TestCase):
             'fetch-dump': {},
             'save-dump': {},
             'init-dataframe': {},
-            'dewarp': {}
+            'dewarp': {
+                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            }
         }
 
         self.assertEqual(expected, make_config())
