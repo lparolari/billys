@@ -46,19 +46,13 @@ Luca Parolari\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   The ABSTRACT is to be in fully-justified italicized text, at the top
-   of the left-hand column, below the author and affiliation
-   information. Use the word ``Abstract'' as the title, in 12-point
-   Times, boldface type, centered relative to the column, initially
-   capitalized. The abstract is to be in 10-point, single-spaced type.
-   Leave two blank lines after the Abstract, then begin the main text.
-   Abstract should be no longer than 300 words.
+   Our lives are fully immersed by bills of every type. Every month we receive an average of 4-5 bills to pay about electricity, gas, water, internet and garbage furnitures and services. The goal of this work is to implement a classifier that automatically classify the bills that we received in the past. Given a batch of camera taken pictures of bills the application's task is to classify every bill and then store it inside the appropriate folder. In this way the app could organize better our finances lives. We build a sophisticated pipeline to handle the camera taken pictures, for then passing to an OCR that extract all the text contained in it. Then a simple Naive Bayes classifier is used in order to perform the classification. This is only the first step but it can be improved with more and sopphisticated features like the extraction of consumption, bill amount and deadlines and many more.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
 \section{Introduction}
 
-Please follow the guidelines that have been uploaded on Moodle. Remember also that the report should be no longer than six pages (plus references).
+The purpose of our work is to classify bills about gas, water, garbage, internet and ellectricity furnitures and services. There are different aspects to take care of when dealing with camera taken photos, OCRs and document classification. For these reasons we develop a strong pipeline to manage different problems that could occur when dealing with these objects. Another important aspect when dealing with machine learning problems is getting a lot of data (in our case the bills) and the dataset construction. We will investigate all of these aspect in this paper. We are pretty sattisfied with this work because we reached a TODO\% of correct classification considering different metrics like... TODO    
 
 
 \begin{figure*}[h!]
@@ -66,6 +60,26 @@ Please follow the guidelines that have been uploaded on Moodle. Remember also th
 	\centering
 	\includegraphics[width=1.0\textwidth]{images/pipeline.png}
 \end{figure*}
+
+
+\section{Related Work}
+We couldn't have finded work that perform this particular task on the internet. However different aspect that we had to take care when develop this project have been taken into consideration by several works: primarily the problem of dewarping a camera taken image is essential for our application, in particular for pre-processing the image for the OCR and this problem was faced by [TODO: Improving Camera-based Document Analysis with Deep Learning] wich is based upon the experiments conducted by [TODO Recovering Homography from Camera Captured Documents using Convolutionjal Neural Networs]. The second task is to extact all the words contained in a bill: to face this task we relied on Tesseract [TODO: set the refence] wich is a popular open-source OCR developed by Goggle. The last major step is performing the classification wich could be performed by a Naive Bayes Classifier, TODO set references. 
+
+\section{Dataset}
+
+\section{Method}
+
+\section{Experiments}
+
+\subsection{Dewarping or not?}
+Explain how the results are affected by prospective issues.
+
+\subsection{Camera taken image quality}
+Brightness and contrast enhancer 
+
+\section{Conclusion}
+
+
 
 
 \subsection{Language}
