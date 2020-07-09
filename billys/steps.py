@@ -36,7 +36,6 @@ def show(df: pd.DataFrame) -> pd.DataFrame:
     df
         The dataframe itself without changes.
     """
-    print(df.columns)
     print(df)
     return df
 
