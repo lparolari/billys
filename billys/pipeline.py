@@ -16,8 +16,8 @@ import piexif
 from PIL import Image, ImageEnhance, ImageOps
 import deepmerge
 
-from billys.steps import dump, show, skip
-from billys.steps import build, fetch, pickle
+from billys.steps import dump, revert, show, skip
+from billys.steps import build, fetch
 from billys.steps import brightness, contrast, dewarp, rotation
 from billys.steps import ocr, show_boxed_text
 from billys.steps import extract_text, preprocess_text
@@ -41,6 +41,8 @@ def get_default_steps() -> List[str]:
         'brightness',
         'ocr',
         'show-boxed-text',
+        'print',
+        'save-dump',
         # TODO: complete pipeline
     ]
 
@@ -139,7 +141,9 @@ def make_config(custom={}):
         'fetch-dump': {},
         'save-dump': {},
         'init-dataframe': {},
-        'dewarp': {}
+        'dewarp': {
+            'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+        }
     }
 
     # Merge given config with defaults.
@@ -162,8 +166,8 @@ def make_steps(step_list: List[str] = get_default_steps(), config=make_config())
     available_steps = {
         'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
         # 'fetch-checkpoint': lambda *_: fetch(**config.get('fetch-checkpoint')),
-        'fetch-dump': lambda *_: pickle(**config.get('fetch-dump')),
-        'save-dump': lambda *x: dump(*x),
+        'fetch-dump': lambda *_: revert(**config.get('fetch-dump')),
+        'save-dump': lambda *x: dump(*x, **config.get('save-dump')),
         'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
         'print': lambda *x: show(*x),
         'dewarp': lambda *x: dewarp(*x, **config.get('dewarp')),
