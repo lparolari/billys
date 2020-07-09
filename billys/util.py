@@ -8,6 +8,10 @@ from pickle import load
 BILLYS_WORKSPACE_NAME = '.billys'
 
 
+def identity(x):
+    return x
+
+
 def get_data_home(data_home=None):
     """
     Returns
