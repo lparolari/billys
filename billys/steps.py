@@ -19,6 +19,7 @@ from billys.ocr.ocr import ocr_data
 from billys.text.preprocessing import (to_lower, remove_accented_chars, remove_punctuation,
                                        remove_nums, remove_stopwords, lemmatize, tokenize,
                                        download_stopwords, make_nlp)
+from billys.text.classification import train
 
 
 def show(df: pd.DataFrame) -> pd.DataFrame:
@@ -35,6 +36,7 @@ def show(df: pd.DataFrame) -> pd.DataFrame:
     df
         The dataframe itself without changes.
     """
+    print(df.columns)
     print(df)
     return df
 
@@ -61,7 +63,7 @@ def dump(df: pd.DataFrame) -> pd.DataFrame:
     df
         The dataframe without changes.
     """
-    filename = save('dump_ocr', df)
+    filename = save('test', df)
     print(f'Dumped object into {filename}')
     return df
 
@@ -321,6 +323,8 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
     df_out = df[[column for column in df.columns if column not in [
         'filename']]].copy()
 
+    print(df_out)
+
     new_filename_list = []
 
     for index, row in df.iterrows():
@@ -502,3 +506,17 @@ def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
     df_out['text'] = text_list
 
     return df_out
+
+
+"""
+Text classification steps
+"""
+
+
+def train_classifier(df: pd.DataFrame):
+    print(df.columns)
+    data = df['text']
+    targets = df['target']
+    # target_names = df['target_name']
+
+    train(data=data, targets=targets, target_names=[])

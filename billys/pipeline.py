@@ -20,6 +20,7 @@ from billys.steps import build, fetch, pickle
 from billys.steps import brightness, contrast, dewarp, rotation
 from billys.steps import ocr, show_boxed_text
 from billys.steps import extract_text, preprocess_text
+from billys.steps import train_classifier
 from billys.util import get_elapsed_time, now, get_data_home
 
 
@@ -39,6 +40,7 @@ def get_default_steps() -> List[str]:
         'brightness',
         'ocr',
         'show-boxed-text',
+        'save-dump',
         # TODO: complete pipeline
     ]
 
@@ -92,8 +94,9 @@ def make_config(custom={}):
         },
         'fetch-dump': {
             'data_home': get_data_home(),
+            'name': 'preprocessed.pkl',
         },
-        'init_dataframe': {
+        'init-dataframe': {
             'force_good': True,
             'subset': 'train',
         },
@@ -123,6 +126,7 @@ def make_steps(step_list=None, config=make_config()):
         'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
         'fetch-checkpoint': lambda *_: fetch(**config.get('fetch-checkpoint')),
         'fetch-dump': lambda *_: pickle(**config.get('fetch-dump')),
+        'save-dump': lambda *x: dump(*x),
         'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
         'print': lambda *x: show(*x),
         'dewarp': lambda *x: dewarp(*x, **config.get('dewarp')),
@@ -133,6 +137,7 @@ def make_steps(step_list=None, config=make_config()):
         'show-boxed-text': show_boxed_text,
         'extract-text': extract_text,
         'preprocess-text': preprocess_text,
+        'train-classifier': train_classifier
     }
 
     to_do_steps = []
