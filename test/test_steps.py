@@ -7,8 +7,8 @@ import unittest
 
 import pandas as pd
 
-from billys.pipe.init import build, fetch
-from billys.pipe.shared import show, skip
+from billys.steps import build, fetch
+from billys.steps import show, skip
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
