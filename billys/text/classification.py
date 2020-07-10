@@ -40,15 +40,15 @@ def train(data, targets, target_names):
         ('clf', MultinomialNB()),
     ])
 
-    text_clf.fit(data, targets.astype('int'))
+    text_clf.fit(data, targets)
 
-    docs_new = ['gas', 'acqua']
+    docs_new = ['gas', 'acqua', 'rifiuti', 'telefono', 'servizio idrico']
     # X_new_counts = count_vect.transform(docs_new)
     # X_new_tfidf = tfidf_transformer.transform(X_new_counts)
 
     predicted = text_clf.predict(docs_new)
 
     for doc, category in zip(docs_new, predicted):
-        print('%r => %s' % (doc, category))
+        print('%r => %s (%s)' % (doc, target_names[category], category))
 
     return text_clf

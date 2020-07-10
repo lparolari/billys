@@ -542,9 +542,30 @@ Text classification steps
 
 
 def train_classifier(df: pd.DataFrame):
-    print(df.columns)
-    data = df['text']
-    targets = df['target']
-    # target_names = df['target_name']
+    # import random
+    # random.seed(42)
+    # indexes = df[df['target_name'] == 'telefonia e internet'].index
+    # new_indexes = []
+    # for idx in indexes:
+    #     if random.random() < 0.75:
+    #         new_indexes.append(idx)
+    # df.drop(new_indexes, inplace=True)
 
-    train(data=data, targets=targets, target_names=[])
+    # indexes = df[df['target_name'] == 'luce'].index
+    # new_indexes = []
+    # for idx in indexes:
+    #     if random.random() < 0.5:
+    #         new_indexes.append(idx)
+    # df.drop(new_indexes, inplace=True)
+
+    print(df['target'].value_counts())
+
+    data = df['text'].tolist()
+    targets = df['target'].tolist()
+    target_names = ['acqua', 'garbage', 'gas', 'luce', 'telefonia e internet']
+    target_names.sort()
+    # print(data)
+    # print(targets)
+    # print(target_names)
+
+    train(data=data, targets=targets, target_names=target_names)
