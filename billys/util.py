@@ -242,7 +242,7 @@ def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
     dpi
         A tuple specifying dpi. Valid only with `engine=pil`.
     """
-    ensure_dir(os.path.dirname(filename))
+    ensure_dir(filename)
     if engine == 'cv2':
         cv2.imwrite(filename, imdata)
     elif engine == 'pil':

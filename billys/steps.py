@@ -192,12 +192,13 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         subset = row['subset']
         imdata = read_image(filename, is_pdf=is_pdf)
 
-        logging.debug(f'Dewarping image {filename}')
-
-        if not is_good:             # Dewarp the image only if it is bad.
+        if not is_good:
+            # Dewarp the image only if it is bad.
+            logging.debug(f'Dewarping image {filename}')
             dewarped_imdata = dewarp_image(
                 imdata, homography_model, grayscale=grayscale)
         else:
+            logging.debug(f'Skipping dewarp for {filename}')
             dewarped_imdata = imdata
 
         new_filename = make_filename(

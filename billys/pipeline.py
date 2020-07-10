@@ -41,7 +41,8 @@ def get_default_steps() -> List[str]:
         'brightness',
         'ocr',
         'show-boxed-text',
-        'print',
+        'extract-text',
+        'preprocess-text',
         'save-dump',
         # TODO: complete pipeline
     ]
