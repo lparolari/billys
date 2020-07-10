@@ -21,7 +21,7 @@
 
 % Pages are numbered in submission mode, and unnumbered in camera-ready
 %\ifcvprfinal\pagestyle{empty}\fi
-\setcounter{page}{4321}
+\setcounter{page}{1}
 \begin{document}
 
 %%%%%%%%% TITLE
@@ -55,19 +55,53 @@ Luca Parolari\\
 The purpose of our work is to classify bills about gas, water, garbage, internet and ellectricity furnitures and services. There are different aspects to take care of when dealing with camera taken photos, OCRs and document classification. For these reasons we develop a strong pipeline to manage different problems that could occur when dealing with these objects. Another important aspect when dealing with machine learning problems is getting a lot of data (in our case the bills) and the dataset construction. We will investigate all of these aspect in this paper. We are pretty sattisfied with this work because we reached a TODO\% of correct classification considering different metrics like... TODO    
 
 
-\begin{figure*}[h!]
-	\caption{Our pipeline}
-	\centering
-	\includegraphics[width=1.0\textwidth]{images/pipeline.png}
-\end{figure*}
-
-
 \section{Related Work}
 We couldn't have finded work that perform this particular task on the internet. However different aspect that we had to take care when develop this project have been taken into consideration by several works: primarily the problem of dewarping a camera taken image is essential for our application, in particular for pre-processing the image for the OCR and this problem was faced by \cite{Improvingcamera-based} with his project \cite{mobile-ocr} wich is based upon the experiments conducted by \cite{recoveringhomography}. The second task is to extact all the words contained in a bill: to face this task we relied on Tesseract \cite{Tesseract} wich is a popular open-source OCR developed by Goggle. The last major step is performing the classification wich could be performed by a Naive Bayes Classifier, TODO set references. 
 
 \section{Dataset}
+When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to made our  dataset gathering all the bills that we could find. Our dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our app: take a bill's photo and classify it. The categories provided for our experimet are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
 
-\section{Method}
+
+\begin{table}[!h]
+	\begin{center}
+		\begin{tabular}{ll}
+			\hline
+			category    & quantity \\ \hline
+			gas         & TODO     \\
+			electricity & TODO     \\
+			intenet     & TODO     \\
+			water       & TODO     \\
+			garbage     & TODO     \\ \hline
+			total       & 1052     \\ \hline
+		\end{tabular}
+	\end{center}
+	\label{dataset-table}
+	\caption{Dataset composition}
+\end{table}
+
+Our dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{pipeline}) which is trained on a completely different dataset. In this way we have the assumption that the document document are already dewarped (this tasks could be delegated with another application or coul be substituded) and we are ready to train the final classificator avoiding poor performance due to other previous pre-processing phases. We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
+
+
+\section{Proposed Method}
+
+\begin{figure*}[h]
+	\centering
+	\includegraphics[width=1.0\textwidth]{images/pipeline.png}
+	\caption{Our pipeline}
+	\label{pipeline}
+\end{figure*}
+
+\subsection{Image pre-processing phase}
+
+\subsection{OCR phase}
+
+\subsection{Text-preprocessing phase}
+
+\subsection{Classification phase}
+Speak about different classification alternatives like naive bayes, svm ecc ecc reported on different  articles
+
+
+
 
 \section{Experiments}
 
