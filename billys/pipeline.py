@@ -39,6 +39,7 @@ def get_default_steps() -> List[str]:
         'dewarp',
         'rotation',
         'brightness',
+        'contrast',
         'ocr',
         'show-boxed-text',
         'extract-text',
