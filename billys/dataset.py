@@ -2,6 +2,7 @@
 Manage dataset interaction.
 """
 
+import logging
 import os
 import pathlib
 
@@ -9,16 +10,17 @@ import cv2
 import pandas as pd
 import sklearn
 import sklearn.datasets
-from pdf2image import convert_from_path
 
-from billys.util import get_data_home, get_data_tmp
+from billys.constant import BILLYS_SUPPORTED_IMAGES_FILE_LIST
+from billys.util import ensure_dir, get_data_home, get_data_tmp
 
 
 def fetch_billys(data_home=None,
+                 name='billys',
                  subset='train',
                  description=None,
                  categories=None,
-                 load_content=True,
+                 load_content=False,  # Note: in scikit this is True by default!
                  shuffle=True,
                  encoding=None,
                  decode_error='strict',
@@ -31,6 +33,9 @@ def fetch_billys(data_home=None,
     data_home : optional, default: None
         Specify a download and cache folder for the datasets. If None,
         all billys data is stored in default subfolder.
+
+    name: optiona, default: 'billys'
+        The dataset name.
 
     subset : 'train' or 'test', 'all', optional
         Select the dataset to load: 'train' for the training set, 'test'
@@ -45,7 +50,7 @@ def fetch_billys(data_home=None,
     """
 
     data_home = get_data_home(data_home=data_home)
-    target_dir = os.path.join(data_home, 'billys')
+    target_dir = os.path.join(data_home, name)
 
     train_path = os.path.join(target_dir, 'train')
     test_path = os.path.join(target_dir, 'test')
@@ -72,7 +77,7 @@ def fetch_billys(data_home=None,
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
 
 
-def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
+def make_dataframe(dataset: sklearn.utils.Bunch, force_good: bool = False, subset: str = 'train'):
     """
     Create a dataframe from the given dataset.
 
@@ -91,61 +96,95 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good=False):
         A new dataframe with the following columns
          * 'filename', the path to image or pdf file,
          * 'target', the encoded values for target names,
-         * 'data', the image data read with `cv2.imread(path)`,
+         * 'target_name', the target name,
          * 'grayscale', whether the image is in greyscale,
-         * 'smart_doc', whether image is from smartdoc dataset,
-         * 'good', whether the image is good, i.e., it does not require dewarping,
-         * 'is_pdf', whether the image file is in pdf format.
+         * 'is_good', whether the image is good, i.e., it does not require dewarping,
+         * 'is_pdf', whether the image file is in pdf format,
+         * 'subset', the dataset subset, one in 'train', 'test'.
     """
-    df = pd.DataFrame(columns=['filename', 'target',
-                               'data', 'grayscale', 'smart_doc'])
+    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'grayscale',
+                               'is_good', 'is_pdf', 'is_valid', 'subset'])
 
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
-    df['data'] = [read_file(filename) for filename in dataset.filenames]
+    df['target_name'] = [dataset.target_names[target]
+                         for target in dataset.target]
     df['grayscale'] = False
-    df['smart_doc'] = False
-    df['good'] = [filename.endswith(
-        '.pdf') or force_good for filename in dataset.filenames]
-    df['is_pdf'] = [filename.endswith('.pdf')
-                    for filename in dataset.filenames]
+    df['is_good'] = [is_good(filename, force_good)
+                     for filename in dataset.filenames]
+    df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
+    df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
+    df['subset'] = subset
+
+    # Drop all invalid rows
+    indexes = df[df['is_valid'] == True].index
+    df.drop(indexes, inplace=True)
+
+    # Drop is_valid column
+    df = df[[column for column in df.columns if column not in ['is_valid']]]
 
     return df
 
 
-def read_file(filename: str):
+def is_good(filename: str, force: bool) -> bool:
     """
-    Read pdf, jpg and png file data and return it.
+    Verify whether a file is good or not, i.e., it does not need
+    any shape or illumination modification. By default a file is 
+    good if it is a pdf.
 
     Parameters
     ----------
-    filename: str
-        The path to the file to read. File extension must be one of
-        'jpg', 'png' or 'pdf'. If the file if a pdf file, it is converted to an image
-        with `pdf2image` module and then its data is read with `cv2`.
+    filename
+        The file name.
+    force
+        Wether to force the goodness of a file.
 
     Returns
     -------
-    imdata
-        The image data encoded with cv2 format, i.e., a list with shape
-        [w, h, number of channels].
+    good
+        True whether the file is a pdf or its goodnes is forced,
+        False otherwise.
     """
-    filelower = filename.lower()
+    return filename.endswith('.pdf') or force
 
-    if filelower.endswith('pdf'):
-        # Convert pdf to image and the store the image data.
-        pages = convert_from_path(filename)
-        tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
-        os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
-        for page in pages:
-            page.save(tmp_filename, 'JPEG')
-            # As specification, we need only the first page.
-            break
-        return cv2.imread(tmp_filename)
 
-    elif filelower.endswith('jpg') or filelower.endswith('png'):
-        # Directly load the image data.
-        return cv2.imread(filename)
-    else:
-        raise AssertionError('Supported file types are {}, you gived {}.'.format(
-            'pdf, jpg or png', pathlib.Path(filename).suffix))
+def is_pdf(filename: str) -> bool:
+    """
+    Verify whether a file is a pdf or not.
+
+    Parameters
+    ----------
+    filename
+        The file name.
+
+    Returns
+    -------
+    is_pdf
+        True whether the file is a pdf, False otherwise.
+    """
+    return filename.lower().endswith('.pdf')
+
+
+def is_valid(filename: str) -> bool:
+    """
+    Verify whether a file is good or not for the pipeline.
+
+    Parameters
+    ----------
+    filename
+        The file name.
+
+    Returns
+    -------
+    is_valid
+        True whether the file is a good file for the pipeline, i.e.,
+        it is a supported file, False otherwise.
+    """
+    splitted = os.path.splitext(filename)
+
+    if len(splitted) < 2:
+        return False
+
+    ext = splitted[1]
+    ext = ext.lower()
+    return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST

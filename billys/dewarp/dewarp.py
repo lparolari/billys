@@ -95,9 +95,9 @@ def dewarp_image(image, homography_model, smart_doc=False, grayscale=False):
     # else:
     #     img = cv2.imread(image_path)
 
-    # manually rotate (should be automated)
-    if smart_doc:
-        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    # # manually rotate (should be automated)
+    # if smart_doc:
+    #     image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
     # save original size to compute scaling factor
     if grayscale:

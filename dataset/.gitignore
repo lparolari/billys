@@ -1,0 +1,5 @@
+# Ignoring all dataset in this directory as they may
+# contain sensitive data.
+
+billys*
+*.zip
