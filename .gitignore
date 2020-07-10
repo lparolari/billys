@@ -145,3 +145,6 @@ venv/
 
 # tesseract temp files
 *.tif
+
+# billys config file
+billys.cfg

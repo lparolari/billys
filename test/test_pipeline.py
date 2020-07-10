@@ -1,14 +1,12 @@
 """
-Test case for pipeline module.
+Test case for cli.
 """
 
 import os
 import unittest
 
-import pandas as pd
-
-from billys.pipe.init import build, fetch
-from billys.pipe.shared import show, skip
+from billys.pipeline import get_default_steps, get_available_steps, make_config, make_steps, pipeline
+from billys.util import get_data_home
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
@@ -16,47 +14,84 @@ from billys.pipe.shared import show, skip
 
 class PipelineTest(unittest.TestCase):
 
-    def setUp(self):
-        # mock dataframe
-        d = {'a': ['a1', 'a2'], 'b': ['b1', 'b2'], 'c': ['c1', 'c2']}
-        df = pd.DataFrame(data=d)
+    def test_make_config_default(self):
+        expected = {
+            'fetch-billys': {},
+            'fetch-dump': {},
+            'save-dump': {},
+            'init-dataframe': {},
+            'dewarp': {
+                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            }
+        }
 
-        self.df = df
+        self.assertEqual(expected, make_config())
 
-        # mock dataset
-        self.filenames = ['/tmp/billys/train/cat1/1.png',
-                          '/tmp/billys/test/cat1/1.png']
-        for filename in self.filenames:
-            if not os.path.exists(os.path.dirname(filename)):
-                os.makedirs(os.path.dirname(filename))
-            with open(filename, 'w+') as f:
-                f.write('example')
-                f.flush()
+    def test_make_config_overwrite(self):
+        overwrite = {
+            'fetch-billys': {
+                'data_home': get_data_home('/path/to/datahome'),
+                'name': 'my-dataset',
+                'subset': 'test',
+            },
+            'fetch-dump': {
+                'name': 'my-dump.pkl',
+            },
+            'init-dataframe': {},
+            'dewarp': {
+                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            }
+        }
+        expected = {
+            'fetch-billys': {
+                'data_home': get_data_home('/path/to/datahome'),
+                'name': 'my-dataset',
+                'subset': 'test',
+            },
+            'fetch-dump': {
+                'name': 'my-dump.pkl',
+            },
+            'save-dump': {},
+            'init-dataframe': {},
+            'dewarp': {
+                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            }
+        }
 
-    def test_show(self):
-        self.assertTrue(show(self.df).equals(self.df))
+        self.assertEqual(expected, make_config(custom=overwrite))
 
-    def test_skip(self):
-        self.assertTrue(skip(self.df).equals(self.df))
+    def test_make_steps_no_args(self):
+        expected = get_default_steps()
+        actual = list(map(lambda x: x[0], make_steps()))
+        self.assertEqual(expected, actual)
 
-    def test_fetch(self):
-        dataset = fetch('/tmp')
-        self.assertEqual(dataset.filenames, ['/tmp/billys/train/cat1/1.png'])
+    def test_make_steps_empty_list(self):
+        expected = []
+        actual = list(map(lambda x: x[0], make_steps(step_list=[])))
+        self.assertEqual(expected, actual)
 
-    def test_build(self):
-        dataset = fetch('/tmp')
-        df = build(dataset, True)
-        df.equals(pd.DataFrame(data={
-                  'filename': ['/tmp/billys/train/cat1/1.png'],
-                  'target': [0],
-                  'data': ['example'],
-                  'grayscale': [False],
-                  'smart_doc': [False],
-                  'good': [True],
-                  'is_pdf': [False]}))
+    def test_make_steps_include_available_steps(self):
+        step_list = ['print', 'dewarp', 'ocr']
+        expected = step_list
+        actual = list(map(lambda x: x[0], make_steps(
+            step_list=step_list, config=make_config())))
+        self.assertEqual(expected, actual)
 
-    # TODO: dewarp
-    # TODO: contrast
-    # TODO: ocr
-    # TODO: feat extr.
-    # TODO: classification
+    def test_make_steps_exclude_undefined_steps(self):
+        step_list = ['print', 'dewarp', 'ocr', 'ocr_test']
+        expected = ['print', 'dewarp', 'ocr']
+        actual = list(map(lambda x: x[0], make_steps(
+            step_list=step_list, config=make_config())))
+        self.assertEqual(expected, actual)
+
+    def test_default_in_available_steps(self):
+        self.assertTrue(set(get_default_steps()).issubset(
+            set(get_available_steps())))
+
+    def test_pipeline_steps_empty_list(self):
+        self.assertEqual(None, pipeline([]))
+
+    def test_pipeline_data_propagation(self):
+        zero = ('zero', lambda *_: 0)
+        inc = ('inc', lambda x: x + 1)
+        self.assertEqual(3, pipeline(steps=[zero, inc, inc, inc]))

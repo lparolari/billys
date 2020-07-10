@@ -10,7 +10,6 @@ import cv2
 import pandas as pd
 import sklearn
 import sklearn.datasets
-from pdf2image import convert_from_path
 
 from billys.constant import BILLYS_SUPPORTED_IMAGES_FILE_LIST
 from billys.util import ensure_dir, get_data_home, get_data_tmp
@@ -21,7 +20,7 @@ def fetch_billys(data_home=None,
                  subset='train',
                  description=None,
                  categories=None,
-                 load_content=True,
+                 load_content=False,  # Note: in scikit this is True by default!
                  shuffle=True,
                  encoding=None,
                  decode_error='strict',
@@ -189,57 +188,3 @@ def is_valid(filename: str) -> bool:
     ext = splitted[1]
     ext = ext.lower()
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
-
-
-def read_image(filename, is_pdf, engine: str = 'cv2'):
-    """
-    Read the file data if it is supported and return it. If the file
-    is not supported, we ignore it.
-
-    Parameters
-    ----------
-    filename
-    is_pdf
-    engine: cv2 or pil
-
-    Returns
-    -------
-    imdata
-        The image data encoded with cv2 format, i.e., a list with shape
-        [w, h, number of channels].
-    """
-    if engine == 'cv2':
-        if is_pdf:
-
-            # Convert pdf to image and the store the image data.
-            pages = convert_from_path(filename)
-            tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
-            os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
-            for page in pages:
-                page.save(tmp_filename, 'JPEG')
-                # As specification, we need only the first page.
-                break
-            return cv2.imread(tmp_filename)
-
-        else:
-            # Directly load the image data. We do not check the
-            # image format because we assume that it is valid.
-            return cv2.imread(filename)
-    elif engine == 'pil':
-        return Image.open(filename)
-    else:
-        loggin.warning(
-            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
-        return None
-
-
-def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
-    ensure_dir(os.path.dirname(filename))
-    if engine == 'cv2':
-        cv2.imwrite(filename, imdata)
-    elif engine == 'pil':
-        imdata.save(filename, 'jpeg', dpi=dpi)
-    else:
-        loggin.warning(
-            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
-        return None

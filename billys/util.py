@@ -1,19 +1,27 @@
+import cv2
 import logging
 import os
 import os.path
 import time
 from decimal import ROUND_HALF_UP, Decimal
-from pickle import load
+from pickle import load, dump
+from typing import Any, Optional
+
+from pdf2image import convert_from_path
 
 BILLYS_WORKSPACE_NAME = '.billys'
+
+
+def identity(x):
+    return x
 
 
 def get_data_home(data_home=None):
     """
     Returns
-    ------- 
+    -------
     path: str
-        `data_home` if it is not None, otherwise a path to a directory into the 
+        `data_home` if it is not None, otherwise a path to a directory into the
         user HOME path.
     """
 
@@ -29,10 +37,23 @@ def get_data_home(data_home=None):
     return data_home
 
 
+def get_filename(name, data_home=None):
+    """
+    Build a filename from its name and its path.
+    You should provide file extension.
+
+    Returns
+    -------
+    filename
+        A file name with right path and name `name`.
+    """
+    return os.path.join(get_data_home(data_home), name)
+
+
 def get_data_tmp(data_tmp=None):
     """
     Returns
-    ------- 
+    -------
     path: str
         `data_tmp` if it is not None, otherwise a path to a directory tmp directory.
     """
@@ -99,9 +120,133 @@ def get_log_level(level: str) -> int:
     return logging.NOTSET
 
 
-def read_file(filename, is_pkl: bool = False):
-    if filename:
-        return load(open(filename, 'rb'))
+def read_file(filename: str) -> Optional[str]:
+    """
+    Read a common file and return its content.
+
+    Returns
+    -------
+    content
+        The file content
+    """
+    try:
+        with open(filename, 'r') as f:
+            content = f.read
+        return content
+    except IOError as e:
+        logging.error(f'Error reading file {filename}.')
+        logging.error(e)
+
+
+def save_file(content: str, filename: str) -> None:
+    """
+    Save a common file with content `content` to file `filename`.
+    """
+    try:
+        with open(filename, 'w') as f:
+            f.write(content)
+    except IOError as e:
+        logging.error(f'Error writing file {filename}.')
+        logging.error(e)
+
+
+def read_dump(filename: str) -> Optional[Any]:
+    """
+    Read a dump file and return the python object.
+
+    Returns
+    -------
+    object
+        The dumped object
+    """
+    try:
+        with open(filename, 'rb') as f:
+            obj = load(f)
+        return obj
+    except IOError as e:
+        logging.error(f'Error reading dump file {filename}.')
+        logging.error(e)
+
+
+def save_dump(obj: Any, filename: str) -> None:
+    """
+    Save a dump file with content `obj` to file `filename`.
+    """
+    try:
+        with open(filename, 'wb') as f:
+            dump(obj, f)
+    except IOError as e:
+        logging.error(f'Error saving dump file {filename}.')
+        logging.error(e)
+
+
+def read_image(filename: str, is_pdf: bool = False, engine: str = 'cv2'):
+    """
+    Read the file data if it is supported and return it. If the file
+    is not supported, we ignore it.
+
+    Parameters
+    ----------
+    filename
+    is_pdf
+    engine: cv2 or pil
+
+    Returns
+    -------
+    imdata
+        The image data encoded with cv2 format, i.e., a list with shape
+        [w, h, number of channels].
+    """
+    if engine == 'cv2':
+        if is_pdf:
+
+            # Convert pdf to image and the store the image data.
+            pages = convert_from_path(filename)
+            tmp_filename = os.path.join(get_data_tmp(), 'pdf.jpg')
+            os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
+            for page in pages:
+                page.save(tmp_filename, 'JPEG')
+                # As specification, we need only the first page.
+                break
+            return cv2.imread(tmp_filename)
+
+        else:
+            # Directly load the image data. We do not check the
+            # image format because we assume that it is valid.
+            return cv2.imread(filename)
+    elif engine == 'pil':
+        return Image.open(filename)
     else:
-        logging.warning('File type not supported.')
+        loggin.warning(
+            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
         return None
+
+
+def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
+    """
+    Save an image with content `imdata` to file `filename`.
+
+    Parameters
+    ----------
+    filename
+        Path to image file. If some directory containing the file
+        is missing we create it.
+
+    imdata
+        The image content.
+
+    engine
+        The engine used to save the file.
+        Can be one of `cv2` or `pil`. If other, do nothing.
+
+    dpi
+        A tuple specifying dpi. Valid only with `engine=pil`.
+    """
+    ensure_dir(filename)
+    if engine == 'cv2':
+        cv2.imwrite(filename, imdata)
+    elif engine == 'pil':
+        imdata.save(filename, 'jpeg', dpi=dpi)
+    else:
+        loggin.warning(
+            f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')

@@ -8,40 +8,21 @@ compromise the saving and loading functions for checkpoints.
 
 import logging
 import os
-from typing import List
+from typing import Optional, List
 
 import cv2
 import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
+import deepmerge
 
-from billys.steps import dump, show, skip
-from billys.steps import build, fetch, pickle
+from billys.steps import dump, revert, show, skip
+from billys.steps import build, fetch
 from billys.steps import brightness, contrast, dewarp, rotation
 from billys.steps import ocr, show_boxed_text
-from billys.pipe.shared import dump, show, skip
-from billys.util import get_elapsed_time, now, get_data_home
-
-
-def get_all_steps() -> List[str]:
-    """
-    Returns
-    -------
-    steps
-        The list of all available steps in pipeline.
-    """
-    return [
-        'fetch-billys',
-        'fetch-checkpoint',
-        'init-dataframe',
-        'print',
-        'dewarp',
-        'rotation',
-        'brightness',
-        'fetch-checkpoint',
-        'ocr',
-        'show-boxed-text',
-    ]
+from billys.steps import extract_text, preprocess_text
+from billys.steps import train_classifier
+from billys.util import get_elapsed_time, now, get_data_home, identity
 
 
 def get_default_steps() -> List[str]:
@@ -60,33 +41,117 @@ def get_default_steps() -> List[str]:
         'brightness',
         'ocr',
         'show-boxed-text',
+        'extract-text',
+        'preprocess-text',
+        'save-dump',
         # TODO: complete pipeline
     ]
 
 
-def get_config(data_home=None, checkpoint_name=None, dump_name=None, force_good=None, homography_model_path=None):
+def make_config(custom={}):
     """
+    Get the configuration for pipeline steps.
+
+    Parameters
+    ----------
+    config
+        A dict, with the following structure
+        ```
+        {
+            'step-1': {
+                'param-1-1': 'value-1-1',
+                'param-1-2': 'value-1-2',
+                ...
+            }
+            'step-2': {
+                'param-2-1': 'value-2-1',
+                'param-2-2': 'value-2-2',
+                ...
+            }
+            ...
+        }
+        ```
+
+        Notation: For simplicity dict keys will be flattened in docs.
+
+        Available configurations:
+
+        fetch-billys: dict, default={}
+            Configuration for fetch-billys step.
+            Available parameters are
+             * data_home:                               str, optional
+             * name:                                    str, optional
+             * subset:                                  str, optional
+
+        fetch-dump: dict, default={}
+            Configuration for fetch-dump step.
+            Available parameters
+            * data_home:                                str, optional
+            * name:                                     str, required
+
+        save-dump: dict, default={}
+            Configuration for fetch-dump step.
+            Available parameters
+            * data_home:                                str, optional
+            * name:                                     str, required
+
+        init-dataframe: dict, default={}
+            Configuration for init-dataframe step.
+            Available parameters
+            * force_good:                              bool, optional
+            * subset:                                   str, optional
+
+        dewarp: dict, default={}
+            Configuration for dewarp step.
+            Available parameters
+            * homography_model_path:                    str, optional
+
+        Please for further details refer to steps functions documentation.
+
+        Example:
+        ```
+        {
+            'fetch-billys': {
+                'data_home': get_data_home('/path/to/datahome/foo'),
+                'name': 'my-dataset',
+                'subset': 'test',
+            },
+            'fetch-dump': {
+                'name': 'my-dump.pkl',
+            },
+            'init-dataframe': {},
+            'dewarp': {
+                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            }
+        }
+        ```
+
+        Note that you can overwrite only required keys and steps.
+        If keys or steps are omitted the will assume default values
+
     Returns
     -------
     config
-        A dict with a default value for each config.
-        Available configurations are
-         * 'data_home'
-         * 'checkpoint_name'
-         * 'dump_name'
-         * 'force_good'
-         * 'homography_model_path'
+        The given configuration dict merged with defaults.
+        Given configurations overwrite defaults.
     """
-    return {
-        'data_home': get_data_home(data_home),
-        'checkpoint_name': checkpoint_name or 'billys',
-        'dump_name': dump_name or 'dataset.pkl',
-        'force_good': force_good or True,
-        'homography_model_path': homography_model_path or os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+
+    # Default configs
+    default = {
+        'fetch-billys': {},
+        'fetch-dump': {},
+        'save-dump': {},
+        'init-dataframe': {},
+        'dewarp': {
+            'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+        }
     }
 
+    # Merge given config with defaults.
+    return deepmerge.always_merger.merge(default, custom)
 
-def make_steps(step_list, config=get_config()):
+
+def make_steps(step_list: List[str] = get_default_steps(), config=make_config()):
     """
     Build a list of pairs where the first component is the step name, while the
     second component is the function to run for that step.
@@ -96,34 +161,47 @@ def make_steps(step_list, config=get_config()):
     to_do_steps
         A list of step.
     """
-    data_home = config['data_home']
-    checkpoint_name = config['checkpoint_name']
-    dump_name = config['dump_name']
-    force_good = config['force_good']
-    homography_model_path = config['homography_model_path']
 
     logging.debug(f'Building steps {step_list} with config {config}')
 
     available_steps = {
-        'fetch-billys': lambda *_: fetch(data_home=data_home),
-        'fetch-checkpoint': lambda *_: fetch(data_home=data_home, name=checkpoint_name),
-        'fetch-dump': lambda fn, *_: pickle(data_home=data_home, name=dump_name),
-        'init-dataframe': lambda dataset: build(dataset, force_good=force_good),
-        'print': show,
-        'dewarp': lambda df: dewarp(df, homography_model_path=homography_model_path),
+        'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
+        # 'fetch-checkpoint': lambda *_: fetch(**config.get('fetch-checkpoint')),
+        'fetch-dump': lambda *_: revert(**config.get('fetch-dump')),
+        'save-dump': lambda *x: dump(*x, **config.get('save-dump')),
+        'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
+        'print': lambda *x: show(*x),
+        'dewarp': lambda *x: dewarp(*x, **config.get('dewarp')),
         'rotation': rotation,
         'brightness': brightness,
         'contrast': contrast,
         'ocr': ocr,
         'show-boxed-text': show_boxed_text,
+        'extract-text': extract_text,
+        'preprocess-text': preprocess_text,
+        'train-classifier': train_classifier
     }
 
     to_do_steps = []
 
-    for step in step_list:
-        to_do_steps.append(tuple((step, available_steps[step])))
+    for step in (step_list):
+        func = available_steps.get(step)
+        if func is not None:
+            to_do_steps.append(tuple((step, func)))
+        else:
+            logging.warning(f'Unrecognized step {step}, skipping.')
 
     return to_do_steps
+
+
+def get_available_steps(config=make_config()) -> List[str]:
+    """
+    Returns
+    -------
+    steps
+        The list of all available steps in pipeline.
+    """
+    return list(map(lambda x: x[0], make_steps(config=config)))
 
 
 def pipeline(steps):

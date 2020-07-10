@@ -5,62 +5,98 @@ Common and shared pipeline steps.
 from billys.util import ensure_dir, get_data_home, make_filename, read_file
 import logging
 import os
-import typing
+from typing import Optional, Any
 
 import cv2
 import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
-from billys.checkpoint import save
-from billys.dataset import fetch_billys, make_dataframe, read_image, save_image
+from billys.dataset import fetch_billys, make_dataframe
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
+from billys.text.preprocessing import (to_lower, remove_accented_chars, remove_punctuation,
+                                       remove_nums, remove_stopwords, lemmatize, tokenize,
+                                       download_stopwords, make_nlp)
+from billys.text.classification import train
+from billys.util import get_filename, read_file, save_file, read_dump, save_dump, read_image, save_image
 
 
-def show(df: pd.DataFrame) -> pd.DataFrame:
+"""
+Shared pipeline steps.
+"""
+
+
+def show(obj: Any) -> Any:
     """
     Print the dataframe as a side effect and return it.
+    Works only if logging level is setted to debug.
 
     Parameters
     ----------
-    df
-        The dataset as a dataframe.
+    obj
+        The object to log.
 
     Returns
     -------
     df
         The dataframe itself without changes.
     """
-    print(df)
-    return df
+    logging.debug(obj)
+    return obj
 
 
-def skip(x):
+def skip(obj: Any) -> Any:
     """
     The identity function.
     """
-    return x
+    return obj
 
 
-def dump(df: pd.DataFrame) -> pd.DataFrame:
+def dump(obj, name: str, data_home: Optional[str] = None):
     """
-    Dump the dataframe on file as a side effect with :func:`billys.checkpoint.save`,
-    and returns the dataframe without changes.
+    Dump given object on a file and return the object itself.
 
     Parameters
     ----------
-    df
+    obj
         The dataset as a dataframe.
+
+    name
+        The dump name, e.g. 'mydump'.
+
+    data_home
+        Where to save the object dump.
 
     Returns
     -------
-    df
-        The dataframe without changes.
+    obj
+        The object without changes.
     """
-    filename = save('dump_ocr', df)
-    print(f'Dumped object into {filename}')
-    return df
+    filename = get_filename(name, data_home=data_home)
+    save_dump(obj=obj, filename=filename)
+    logging.info(f'Dumped object to {filename}')
+    return obj
+
+
+def revert(name: str, data_home: Optional[str] = None) -> Any:
+    """
+    Fetch the dumped object and return it.
+
+    Parameters
+    ----------
+    name
+        The dump name, e.g. 'mydump'.
+
+    data_home
+        Where to save the object dump.
+
+    Returns
+    -------
+    obj
+        The object dumped object.
+    """
+    return read_dump(filename=get_filename(name, data_home=data_home))
 
 
 """
@@ -68,7 +104,7 @@ Dataset initialization pipeline steps
 """
 
 
-def fetch(data_home: typing.Optional[str] = None, name: str = 'billys', subset: str = 'train'):
+def fetch(data_home: Optional[str] = None, name: str = 'billys', subset: str = 'train'):
     """
     Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
     return it.
@@ -111,10 +147,6 @@ def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFr
         A new dataframe built with :func:`billys.dataset.make_dataframe`.
     """
     return make_dataframe(dataset=dataset, force_good=force_good, subset=subset)
-
-
-def pickle(data_home: typing.Optional[str] = None, name: str = 'dataset.pkl'):
-    return read_file(os.path.join(get_data_home(data_home=data_home), name), is_pkl=True)
 
 
 """
@@ -160,12 +192,13 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         subset = row['subset']
         imdata = read_image(filename, is_pdf=is_pdf)
 
-        logging.debug(f'Dewarping image {filename}')
-
-        if not is_good:             # Dewarp the image only if it is bad.
+        if not is_good:
+            # Dewarp the image only if it is bad.
+            logging.debug(f'Dewarping image {filename}')
             dewarped_imdata = dewarp_image(
                 imdata, homography_model, grayscale=grayscale)
         else:
+            logging.debug(f'Skipping dewarp for {filename}')
             dewarped_imdata = imdata
 
         new_filename = make_filename(
@@ -318,6 +351,8 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
     df_out = df[[column for column in df.columns if column not in [
         'filename']]].copy()
 
+    print(df_out)
+
     new_filename_list = []
 
     for index, row in df.iterrows():
@@ -437,3 +472,79 @@ def show_boxed_text(df: pd.DataFrame):
         save_image(new_filename, img)
 
     return df
+
+
+"""
+Text preprocessing steps
+"""
+
+
+def extract_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    TODO
+    """
+
+    df_out = df.copy()
+
+    text_list = []
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        filename = row['filename']
+
+        logging.debug(f'Extracting text for {filename}')
+
+        text = " ".join(ocr_dict['text'])
+
+        text_list.append(text)
+
+    df_out['text'] = text_list
+
+    return df_out
+
+
+def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    TODO
+    """
+
+    df_out = df.copy()
+
+    download_stopwords()
+    nlp = make_nlp()
+
+    text_list = []
+
+    for index, row in df.iterrows():
+        ocr_dict = row['ocr']
+        filename = row['filename']
+        text = row['text']
+
+        logging.debug(f'Preprocessing text for {filename}')
+
+        text = to_lower(text)
+        text = remove_accented_chars(text)
+        text = remove_punctuation(text)
+        text = lemmatize(text, nlp)
+        text = remove_nums(text)
+        text = remove_stopwords(text)
+
+        text_list.append(text)
+
+    df_out['text'] = text_list
+
+    return df_out
+
+
+"""
+Text classification steps
+"""
+
+
+def train_classifier(df: pd.DataFrame):
+    print(df.columns)
+    data = df['text']
+    targets = df['target']
+    # target_names = df['target_name']
+
+    train(data=data, targets=targets, target_names=[])
