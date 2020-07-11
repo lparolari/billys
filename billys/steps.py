@@ -2,7 +2,7 @@
 Common and shared pipeline steps.
 """
 
-from billys.util import ensure_dir, get_data_home, make_filename, read_file
+from billys.util import ensure_dir, get_data_home, make_dataset_filename, read_file
 import logging
 import os
 from typing import Optional, Any
@@ -201,7 +201,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
             logging.debug(f'Skipping dewarp for {filename}')
             dewarped_imdata = imdata
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='dewarp', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -268,7 +268,7 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
                 elif orientation == 8:
                     img = img.rotate(90, expand=True)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='rotation', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -319,7 +319,7 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(brightness)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='brightness', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -372,7 +372,7 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(contrast)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='contrast', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -465,7 +465,7 @@ def show_boxed_text(df: pd.DataFrame):
 
         img = cv2.resize(imdata, (500, 700))
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='boxed', subset=subset, cat=target_name)
 
         ensure_dir(new_filename)
