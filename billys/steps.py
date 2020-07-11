@@ -525,7 +525,7 @@ def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
         text = to_lower(text)
         text = remove_accented_chars(text)
         text = remove_punctuation(text)
-        text = lemmatize(text, nlp)
+        # text = lemmatize(text, nlp)
         text = remove_nums(text)
         text = remove_stopwords(text)
 
@@ -541,31 +541,32 @@ Text classification steps
 """
 
 
-def train_classifier(df: pd.DataFrame):
-    # import random
-    # random.seed(42)
-    # indexes = df[df['target_name'] == 'telefonia e internet'].index
-    # new_indexes = []
-    # for idx in indexes:
-    #     if random.random() < 0.75:
-    #         new_indexes.append(idx)
-    # df.drop(new_indexes, inplace=True)
+def train_classifier(data):
+    """
+    Train the classifier and returns it.
+    The classifier specification is given in :func:`billys.text.classification.train`.
 
-    # indexes = df[df['target_name'] == 'luce'].index
-    # new_indexes = []
-    # for idx in indexes:
-    #     if random.random() < 0.5:
-    #         new_indexes.append(idx)
-    # df.drop(new_indexes, inplace=True)
+    Parameters
+    ----------
+    data
+        A tuple where the first component is a dataframe used by the training phase,
+        while the second is is used for the test phase.
 
-    print(df['target'].value_counts())
+    Returns
+    -------
+    out
+        A dict where with two keys
+         * 'data', whose value is a pair (train_df, test_df)
+         * 'classifier', whose value is a scikit-learn classifier
+    """
+    train_df, test_df = data
 
-    data = df['text'].tolist()
-    targets = df['target'].tolist()
-    target_names = ['acqua', 'garbage', 'gas', 'luce', 'telefonia e internet']
-    target_names.sort()
-    # print(data)
-    # print(targets)
-    # print(target_names)
+    X_train = train_df['text'].to_list()
+    y_train = train_df['target'].to_list()
+    X_test = test_df['text'].to_list()
+    y_test = test_df['target'].to_list()
 
-    train(data=data, targets=targets, target_names=target_names)
+    clf = train(X_train=X_train, y_train=y_train,
+                X_test=X_test, y_test=y_test)
+
+    return {'data': data, 'classifier': clf}

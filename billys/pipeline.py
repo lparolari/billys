@@ -167,8 +167,8 @@ def make_steps(step_list: List[str] = get_default_steps(), config=make_config())
 
     available_steps = {
         'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
-        # 'fetch-checkpoint': lambda *_: fetch(**config.get('fetch-checkpoint')),
         'fetch-dump': lambda *_: revert(**config.get('fetch-dump')),
+        'fetch-train-test-dump': lambda *_: tuple([revert(name='train_df.pkl'), revert(name='test_df.pkl')]),
         'save-dump': lambda *x: dump(*x, **config.get('save-dump')),
         'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
         'print': lambda *x: show(*x),
@@ -180,7 +180,7 @@ def make_steps(step_list: List[str] = get_default_steps(), config=make_config())
         'show-boxed-text': show_boxed_text,
         'extract-text': extract_text,
         'preprocess-text': preprocess_text,
-        'train-classifier': train_classifier
+        'train-classifier': train_classifier,
     }
 
     to_do_steps = []
