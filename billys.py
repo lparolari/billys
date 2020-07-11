@@ -14,17 +14,20 @@ def parse_steps(args):
 def parse_config(args):
     config = args.config
 
-    try:
-        if os.path.isfile(config):
-            logging.debug(f'Opening config file {config}')
-            with open(config, 'r') as f:
-                return ast.literal_eval(f.read())
-        else:
-            logging.debug(f'Reading configurations from arg')
-            return ast.literal_eval(config)
-    except IOError as e:
-        logging.error(f'Configuration reading failed, using defaults')
-        logging.error(e)
+    if config is not None:
+        try:
+            if os.path.isfile(config):
+                logging.debug(f'Opening config file {config}')
+                with open(config, 'r') as f:
+                    return ast.literal_eval(f.read())
+            else:
+                logging.debug(f'Reading configurations from arg')
+                return ast.literal_eval(config)
+        except IOError as e:
+            logging.error(f'Configuration reading failed, using defaults')
+            logging.error(e)
+            return {}
+    else:
         return {}
 
 
