@@ -5,7 +5,7 @@ Test case for cli.
 import os
 import unittest
 
-from billys.pipeline import get_default_steps, get_available_steps, make_config, make_steps, pipeline
+from billys.pipeline import PresetConfig, get_config, get_steps, make_steps, pipeline
 from billys.util import get_data_home
 
 # pylint: disable=missing-class-docstring
@@ -14,21 +14,61 @@ from billys.util import get_data_home
 
 class PipelineTest(unittest.TestCase):
 
-    def test_make_config_default(self):
-        expected = {
+    def setUp(self):
+        self.zero = ('zero', lambda *_: 0)
+        self.inc = ('inc', lambda x: x + 1)
+
+    def test_preset_config(self):
+        self.assertEqual(
+            PresetConfig.PRECOMPILED_STEPS['preprocess_train_dataset'],
+            PresetConfig('preprocess_train_dataset').get_steps())
+        self.assertEqual(
+            PresetConfig.PRECOMPILED_CONFIG['preprocess_train_dataset'],
+            PresetConfig('preprocess_train_dataset').get_config())
+        self.assertEqual(
+            {'fetch-train-test-dump': {'train': {'name': 'train_df.pkl'}, 'test': {'name': 'test_df.pkl'}},
+             'save-dump': {'name': f'my_train_df.pkl'}},
+            PresetConfig('do_train').get_config({'save-dump': {'name': f'my_train_df.pkl'}}))
+        self.assertRaises(
+            ValueError,
+            lambda: PresetConfig('myconfig'))
+
+    def test_get_steps(self):
+        self.assertEqual([], get_steps(steps=[]))
+        self.assertEqual(['fetch-billys', 'init-dataframe'],
+                         get_steps(steps=['fetch-billys', 'init-dataframe']))
+        self.assertEqual(
+            PresetConfig('preprocess_train_dataset').get_steps(), get_steps())
+
+    def test_get_config(self):
+        self.assertEqual({
             'fetch-billys': {},
             'fetch-dump': {},
+            'save-dump': {'name': 'train_df.pkl'},
+            'init-dataframe': {},
+            'dewarp': {'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')},
+            'fetch-train-test-dump': {'train': {}, 'test': {}}
+        }, get_config())
+
+        self.assertEqual({
+            'fetch-billys': {
+                'data_home': '/path/to/datahome',
+                'name': 'my-dataset',
+                'subset': 'test',
+            },
+            'fetch-dump': {
+                'name': 'my-dump.pkl',
+            },
             'save-dump': {},
             'init-dataframe': {},
             'dewarp': {
                 'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
+            },
+            'fetch-train-test-dump': {
+                'train': {},
+                'test': {}
             }
-        }
-
-        self.assertEqual(expected, make_config())
-
-    def test_make_config_overwrite(self):
-        overwrite = {
+        }, get_config(custom={
             'fetch-billys': {
                 'data_home': get_data_home('/path/to/datahome'),
                 'name': 'my-dataset',
@@ -41,57 +81,27 @@ class PipelineTest(unittest.TestCase):
             'dewarp': {
                 'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
             }
-        }
-        expected = {
-            'fetch-billys': {
-                'data_home': get_data_home('/path/to/datahome'),
-                'name': 'my-dataset',
-                'subset': 'test',
-            },
-            'fetch-dump': {
-                'name': 'my-dump.pkl',
-            },
-            'save-dump': {},
-            'init-dataframe': {},
-            'dewarp': {
-                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
-            }
-        }
+        }))
 
-        self.assertEqual(expected, make_config(custom=overwrite))
+    def test_make_steps(self):
+        self.assertEqual(
+            PresetConfig('preprocess_train_dataset').get_steps(),
+            list(map(lambda x: x[0], make_steps())))
 
-    def test_make_steps_no_args(self):
-        expected = get_default_steps()
-        actual = list(map(lambda x: x[0], make_steps()))
-        self.assertEqual(expected, actual)
+        self.assertEqual(
+            [],
+            list(map(lambda x: x[0], make_steps(step_list=[]))))
 
-    def test_make_steps_empty_list(self):
-        expected = []
-        actual = list(map(lambda x: x[0], make_steps(step_list=[])))
-        self.assertEqual(expected, actual)
+        self.assertEqual(
+            ['print', 'dewarp', 'ocr'],
+            list(map(lambda x: x[0], make_steps(step_list=['print', 'dewarp', 'ocr']))))
 
-    def test_make_steps_include_available_steps(self):
-        step_list = ['print', 'dewarp', 'ocr']
-        expected = step_list
-        actual = list(map(lambda x: x[0], make_steps(
-            step_list=step_list, config=make_config())))
-        self.assertEqual(expected, actual)
+        self.assertEqual(
+            ['print', 'dewarp', 'ocr'],
+            list(map(lambda x: x[0], make_steps(step_list=['print', 'dewarp', 'ocr', 'ocr_test']))))
 
-    def test_make_steps_exclude_undefined_steps(self):
-        step_list = ['print', 'dewarp', 'ocr', 'ocr_test']
-        expected = ['print', 'dewarp', 'ocr']
-        actual = list(map(lambda x: x[0], make_steps(
-            step_list=step_list, config=make_config())))
-        self.assertEqual(expected, actual)
-
-    def test_default_in_available_steps(self):
-        self.assertTrue(set(get_default_steps()).issubset(
-            set(get_available_steps())))
-
-    def test_pipeline_steps_empty_list(self):
-        self.assertEqual(None, pipeline([]))
-
-    def test_pipeline_data_propagation(self):
-        zero = ('zero', lambda *_: 0)
-        inc = ('inc', lambda x: x + 1)
-        self.assertEqual(3, pipeline(steps=[zero, inc, inc, inc]))
+    def test_pipeline(self):
+        self.assertEqual(None, pipeline(steps=[]))
+        self.assertEqual(
+            3,
+            pipeline(steps=[self.zero, self.inc, self.inc, self.inc]))
