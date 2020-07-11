@@ -2,7 +2,7 @@
 Common and shared pipeline steps.
 """
 
-from billys.util import ensure_dir, get_data_home, make_filename, read_file
+from billys.util import ensure_dir, get_data_home, make_dataset_filename, read_file
 import logging
 import os
 from typing import Optional, Any
@@ -201,7 +201,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
             logging.debug(f'Skipping dewarp for {filename}')
             dewarped_imdata = imdata
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='dewarp', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -268,7 +268,7 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
                 elif orientation == 8:
                     img = img.rotate(90, expand=True)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='rotation', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -319,7 +319,7 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(brightness)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='brightness', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -372,7 +372,7 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(contrast)
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='contrast', subset=subset, cat=target_name)
         new_filename_list.append(new_filename)
 
@@ -465,7 +465,7 @@ def show_boxed_text(df: pd.DataFrame):
 
         img = cv2.resize(imdata, (500, 700))
 
-        new_filename = make_filename(
+        new_filename = make_dataset_filename(
             filename=filename, step='boxed', subset=subset, cat=target_name)
 
         ensure_dir(new_filename)
@@ -525,7 +525,7 @@ def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
         text = to_lower(text)
         text = remove_accented_chars(text)
         text = remove_punctuation(text)
-        text = lemmatize(text, nlp)
+        # text = lemmatize(text, nlp)
         text = remove_nums(text)
         text = remove_stopwords(text)
 
@@ -541,10 +541,32 @@ Text classification steps
 """
 
 
-def train_classifier(df: pd.DataFrame):
-    print(df.columns)
-    data = df['text']
-    targets = df['target']
-    # target_names = df['target_name']
+def train_classifier(data):
+    """
+    Train the classifier and returns it.
+    The classifier specification is given in :func:`billys.text.classification.train`.
 
-    train(data=data, targets=targets, target_names=[])
+    Parameters
+    ----------
+    data
+        A tuple where the first component is a dataframe used by the training phase,
+        while the second is is used for the test phase.
+
+    Returns
+    -------
+    out
+        A dict where with two keys
+         * 'data', whose value is a pair (train_df, test_df)
+         * 'classifier', whose value is a scikit-learn classifier
+    """
+    train_df, test_df = data
+
+    X_train = train_df['text'].to_list()
+    y_train = train_df['target'].to_list()
+    X_test = test_df['text'].to_list()
+    y_test = test_df['target'].to_list()
+
+    clf = train(X_train=X_train, y_train=y_train,
+                X_test=X_test, y_test=y_test)
+
+    return {'data': data, 'classifier': clf}

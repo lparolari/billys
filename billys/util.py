@@ -37,19 +37,6 @@ def get_data_home(data_home=None):
     return data_home
 
 
-def get_filename(name, data_home=None):
-    """
-    Build a filename from its name and its path.
-    You should provide file extension.
-
-    Returns
-    -------
-    filename
-        A file name with right path and name `name`.
-    """
-    return os.path.join(get_data_home(data_home), name)
-
-
 def get_data_tmp(data_tmp=None):
     """
     Returns
@@ -68,7 +55,20 @@ def get_data_tmp(data_tmp=None):
     return data_tmp
 
 
-def make_filename(filename, cat, subset, step, data_home=None):
+def get_filename(name, data_home=None):
+    """
+    Build a filename from its name and its path.
+    You should provide file extension.
+
+    Returns
+    -------
+    filename
+        A file name with right path and name `name`.
+    """
+    return os.path.join(get_data_home(data_home), name)
+
+
+def make_dataset_filename(filename, cat, subset, step, data_home=None):
     """
     Returns
     -------

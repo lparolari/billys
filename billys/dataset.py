@@ -109,15 +109,15 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good: bool = False, subse
     df['target'] = dataset.target
     df['target_name'] = [dataset.target_names[target]
                          for target in dataset.target]
-    df['grayscale'] = False
+    df['grayscale'] = [False for _ in dataset.filenames]
     df['is_good'] = [is_good(filename, force_good)
                      for filename in dataset.filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
     df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
-    df['subset'] = subset
+    df['subset'] = [subset for _ in dataset.filenames]
 
     # Drop all invalid rows
-    indexes = df[df['is_valid'] == True].index
+    indexes = df[df['is_valid'] == False].index
     df.drop(indexes, inplace=True)
 
     # Drop is_valid column
@@ -126,7 +126,7 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good: bool = False, subse
     return df
 
 
-def is_good(filename: str, force: bool) -> bool:
+def is_good(filename: str, force: bool = False) -> bool:
     """
     Verify whether a file is good or not, i.e., it does not need
     any shape or illumination modification. By default a file is 
@@ -186,5 +186,7 @@ def is_valid(filename: str) -> bool:
         return False
 
     ext = splitted[1]
-    ext = ext.lower()
+    ext = ext.lower()  # normalize
+    ext = ext[1:]      # remove first dot (e.g. .pdf -> pdf)
+
     return ext in BILLYS_SUPPORTED_IMAGES_FILE_LIST
