@@ -62,7 +62,7 @@ def parse_preset(args) -> Optional[PresetConfig]:
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='TODO')
 
     parser.add_argument('--steps', metavar='steps', type=str, default=None,
                         nargs='*', help='Pipeline steps')
