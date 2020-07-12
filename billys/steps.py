@@ -164,7 +164,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     ----------
     df
         The dataset as a dataframe. Required columns are
-            'filename', 'grayscale', 'is_good'
+            'filename', 'is_grayscale', 'is_good'
 
     homography_model_path
         The path to the homography model file in `.h5` format.
@@ -185,7 +185,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
 
     for index, row in df.iterrows():
         filename = row['filename']
-        grayscale = row['grayscale']
+        grayscale = row['is_grayscale']
         is_pdf = row['is_pdf']
         is_good = row['is_good']
         target_name = row['target_name']

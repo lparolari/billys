@@ -29,7 +29,7 @@ class UtilTest(unittest.TestCase):
         actual_cols = df.columns.to_list().copy()
         actual_cols.sort()
         expected_cols = ['filename', 'target', 'target_name',
-                         'grayscale', 'is_good', 'is_pdf', 'subset']
+                         'is_grayscale', 'is_good', 'is_pdf', 'subset']
         expected_cols.sort()
         self.assertEqual(expected_cols, actual_cols)
 

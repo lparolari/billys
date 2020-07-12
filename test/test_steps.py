@@ -50,7 +50,7 @@ class StepsTest(unittest.TestCase):
                   'filename': ['/tmp/billys/train/cat1/1.png'],
                   'target': [0],
                   'data': ['example'],
-                  'grayscale': [False],
+                  'is_grayscale': [False],
                   'smart_doc': [False],
                   'good': [True],
                   'is_pdf': [False]}))

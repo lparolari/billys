@@ -97,19 +97,19 @@ def make_dataframe(dataset: sklearn.utils.Bunch, force_good: bool = False, subse
          * 'filename', the path to image or pdf file,
          * 'target', the encoded values for target names,
          * 'target_name', the target name,
-         * 'grayscale', whether the image is in greyscale,
+         * 'is_grayscale', whether the image is in greyscale,
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
          * 'is_pdf', whether the image file is in pdf format,
          * 'subset', the dataset subset, one in 'train', 'test'.
     """
-    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'grayscale',
+    df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'is_grayscale',
                                'is_good', 'is_pdf', 'is_valid', 'subset'])
 
     df['filename'] = dataset.filenames
     df['target'] = dataset.target
     df['target_name'] = [dataset.target_names[target]
                          for target in dataset.target]
-    df['grayscale'] = [False for _ in dataset.filenames]
+    df['is_grayscale'] = [False for _ in dataset.filenames]
     df['is_good'] = [is_good(filename, force_good)
                      for filename in dataset.filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
