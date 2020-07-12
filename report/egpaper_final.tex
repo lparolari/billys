@@ -64,20 +64,38 @@ When dealing with machine learning applications, in general more data we have  b
 
 \begin{table}[!h]
 	\begin{center}
-		\begin{tabular}{ll}
+		\begin{tabular}{lll}
 			\hline
-			category    & quantity \\ \hline
-			gas         & TODO     \\
-			electricity & TODO     \\
-			intenet     & TODO     \\
-			water       & TODO     \\
-			garbage     & TODO     \\ \hline
-			total       & 1052     \\ \hline
+			category    & quantity & providers \\ \hline
+			internet    & 401      & 9         \\
+			electricity & 282      & 6         \\
+			gas         & 202      & 4         \\
+			water       & 123      & 3         \\
+			garbage     & 44       & 1         \\ \hline
+			total       & 1051     & 19        \\ \hline
 		\end{tabular}
 	\end{center}
 	\label{dataset-table}
 	\caption{Dataset composition}
 \end{table}
+
+In the following summer it is reported all the providers considered per category:
+
+\begin{itemize}
+	\item \textbf{Internet}: \\
+	 Vodafone, Wind, Tre, Wind Tre, Telecom, TIM, Tele 2, Fastweb,  Teletu
+
+	\item \textbf{Electricity}: \\
+	Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera
+
+	\item \textbf{Gas}: Sorgenia, Ascotrade, Etra Energia, Hera
+
+	\item \textbf{Water}: \\ 
+		Etra, Alto Trevigiano Servizi, Hera
+
+	\item \textbf{Garbage}: \\
+		Savno
+\end{itemize}
 
 Our dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{pipeline}) which is trained on a completely different dataset. In this way we have the assumption that the document document are already dewarped (this tasks could be delegated with another application or coul be substituded) and we are ready to train the final classificator avoiding poor performance due to other previous pre-processing phases. We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
 
