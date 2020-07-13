@@ -12,7 +12,7 @@ import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
-from billys.dataset import fetch_billys, make_dataframe_from_dataset, make_dataframe_from_filenames
+from billys.dataset import fetch_billys, make_dataframe_from_dataset, make_dataframe_from_filenames, make_filename
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
 from billys.text.preprocessing import preprocess, make_nlp, download_stopwords
@@ -144,25 +144,33 @@ def fetch_filenames(filenames, data_home=None) -> List[str]:
     filenames
         A list of filenames.
     """
-    images = filenames
-    if type(images) is list:
+    if type(filenames) is list:
         # it is already a list of filenames,
         # just join them with data_home
-        return [get_filename(image, data_home=data_home) for image in images]
+        return [get_filename(filename, data_home=data_home) for filename in filenames]
 
-    if type(images) is str:
-        if os.path.isfile(images):
+    if type(filenames) is str:
+        if os.path.isfile(filenames):
             # it is a single filename
-            return [get_filename(images, data_home=data_home)]
+            return [get_filename(filenames, data_home=data_home)]
         else:
             # it is a directory, get the list of files
-            return [get_filename(image, data_home=data_home) for image in images]
+            from os import listdir
+            path = filenames
+
+            fq_filenames = [get_filename(os.path.join(path, filename), data_home=data_home)
+                            for filename in listdir(get_filename(path, data_home=data_home))]
+
+            # Note: os.path.isfile does not works, don't know why.
+            def isfile(fn): return len(os.path.splitext(fn)) >= 2
+
+            return [fn for fn in fq_filenames if isfile(fn)]
 
 
 def fetch_data_and_classifier(dataset: str, classifier: str, data_home: str = None):
     return {
         'dataset': revert(dataset, data_home=data_home),
-        'classifier': revert(classifier, data_home=data_home)
+        'classifier': revert(classifier, data_home=data_home)['classifier']
     }
 
 
@@ -442,7 +450,7 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
         The dataset as a dataframe.
 
     Returns
-    ------- 
+    -------
     df
         A new dataframe with a new column `ocr` that contains a dict
         with extracted features from image. The type of every value
@@ -609,6 +617,8 @@ def train_classifier(data):
 def classify(data):
     dataset, classifier = data['dataset'], data['classifier']
 
-    print(dataset)
-    print(classifier)
-    print(classifier.predict(dataset))
+    target_names = ['acqua', 'luce', 'gas', 'garbage', 'internet e telefonia']
+    target_names.sort()
+
+    print([target_names[target]
+           for target in classifier.predict(dataset['text'])])

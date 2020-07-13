@@ -274,8 +274,11 @@ def make_filename(row, step: str = None):
             cat=row['target_name'],
             subset=row['subset'],
             step=step)
-    elif stage == 'training':
-        import time
-        return os.path.join(get_data_tmp(), str(time.time()) + row['filename'])
+    elif stage == 'classification':
+        from datetime import datetime
+        now = datetime.now()
+        now_str = now.strftime('%Y%m%d-%H%M%S-%f')
+        base_filename = os.path.basename(row['filename'])
+        return os.path.join(get_data_tmp(), step, base_filename)
     else:
         raise ValueError(f'The stage {stage} is not supported.')

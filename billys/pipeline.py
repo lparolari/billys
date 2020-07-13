@@ -86,14 +86,15 @@ class PresetConfig:
         'preprocess_classify': [
             'fetch-filenames',
             'init-dataframe-from-filenames',
-            'dewarp',
-            'rotation',
-            'brightness',
+            # 'dewarp',
+            # 'rotation',
+            # 'brightness',
             'contrast',
             'ocr',
             'show-boxed-text',
             'extract-text',
             'preprocess-text',
+            'print',
             'save-dump',
         ],
         'classify': [
@@ -138,6 +139,9 @@ class PresetConfig:
             'fetch-data-and-classifier': {
                 'dataset': 'preprocessed_df.pkl',
                 'classifier': 'trained_classifier.pkl',
+            },
+            'build-dataframe-from-filenames': {
+                'force_good': True,
             }
         }
     }
