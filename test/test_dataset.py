@@ -6,7 +6,8 @@ import unittest
 import pandas as pd
 from sklearn.utils import Bunch
 
-from billys.dataset import fetch_billys, make_dataframe, is_good, is_pdf, is_valid
+from billys.dataset import fetch_billys, make_dataframe_from_dataset, make_dataframe_from_filenames, is_good, is_pdf, is_valid
+from billys.util import sort
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
@@ -18,34 +19,49 @@ class UtilTest(unittest.TestCase):
         # TODO
         pass
 
-    def test_make_dataframe(self):
+    def test_make_dataframe_from_dataset(self):
         dataset = Bunch(filenames=['/path/to/data/mydataset/train/cat1/1.jpg', '/path/to/data/mydataset/train/cat1/2.jpg',
                                    '/path/to/data/mydataset/train/cat2/1.jpg', '/path/to/data/mydataset/train/cat2/2.jpg'],
                         target=[0, 0, 1, 1],
                         target_names=['cat1', 'cat2'])
-        df = make_dataframe(dataset=dataset, force_good=True, subset='train')
+        df = make_dataframe_from_dataset(
+            dataset=dataset, force_good=True, subset='train')
 
-        # Check columns
-        actual_cols = df.columns.to_list().copy()
-        actual_cols.sort()
-        expected_cols = ['filename', 'target', 'target_name',
-                         'is_grayscale', 'is_good', 'is_pdf', 'subset']
-        expected_cols.sort()
-        self.assertEqual(expected_cols, actual_cols)
+        # Checks
 
-        # Check not empty
-        self.assertTrue(len(df['filename'].tolist()) > 0)
+        self.assertEqual(
+            sort(['stage', 'filename', 'target', 'target_name',
+                  'is_grayscale', 'is_good', 'is_pdf', 'subset']),
+            sort(df.columns.to_list()))                     # expected columns
+        self.assertTrue((df['stage'] == 'training').all())  # expected stage
+        self.assertTrue(len(df['filename'].tolist()) == 4)  # expected length
+        self.assertTrue((df['subset'] == 'train').all())    # expected subset
+        self.assertTrue((df['is_good'] == True).all()
+                        )      # expected good (force)
+        self.assertEqual(
+            sort(['cat1', 'cat2']),
+            sort(df['target_name'].unique().tolist()))      # expected target names
 
-        # Check subset
-        self.assertTrue((df['subset'] == 'train').all())
+    def test_make_dataframe_from_filenames(self):
+        filenames = ['/path/to/myimages/img1.png', '/img2.jpg',
+                     '/path/to/otherfolder/mybill.pdf', 'path/to/invalid.docx']
+        df = make_dataframe_from_filenames(
+            filenames=filenames, force_good=True)
 
-        # Check good
+        self.assertEqual(
+            sort(['stage', 'filename', 'is_grayscale', 'is_good', 'is_pdf']),
+            sort(df.columns.to_list()))                           # expected columns
+        self.assertTrue(len(df['filename'].tolist())
+                        == 3)        # expected length
+        # expected stage
+        self.assertTrue((df['stage'] == 'classification').all())
+        # expected good (force)
         self.assertTrue((df['is_good'] == True).all())
-
-        # Check target names
-        target_names = df['target_name'].unique().tolist()
-        target_names.sort()
-        self.assertEqual(['cat1', 'cat2'], target_names)
+        self.assertEqual(
+            df['is_pdf'].tolist(),
+            [False, False, True])                                 # expected pdf
+        self.assertTrue((df['is_grayscale'] == False).all()
+                        )      # expected grayscale
 
     def test_is_good(self):
         self.assertTrue(is_good('/path/to/mydata/file.pdf'))

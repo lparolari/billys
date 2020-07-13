@@ -71,8 +71,7 @@ if __name__ == "__main__":
                         nargs='?', help='Path to a file with configs or a dict with configs themselves')
 
     parser.add_argument('--preset', metavar='preset', type=str, default=None,
-                        choices=['preprocess_train_dataset',
-                                 'preprocess_test_dataset', 'do_train'],
+                        choices=PresetConfig.AVAILABLE_STAGES,
                         nargs='?', help='Start pipeline with preset steps and config.\
                                          You can override some configs with option --config.')
 

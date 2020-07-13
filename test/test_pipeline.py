@@ -35,8 +35,8 @@ class PipelineTest(unittest.TestCase):
 
     def test_get_steps(self):
         self.assertEqual([], get_steps(steps=[]))
-        self.assertEqual(['fetch-billys', 'init-dataframe'],
-                         get_steps(steps=['fetch-billys', 'init-dataframe']))
+        self.assertEqual(['fetch-billys', 'init-dataframe-from-dataset'],
+                         get_steps(steps=['fetch-billys', 'init-dataframe-from-dataset']))
         self.assertEqual(
             PresetConfig('preprocess_train_dataset').get_steps(), get_steps())
 
@@ -45,7 +45,9 @@ class PipelineTest(unittest.TestCase):
             'fetch-billys': {},
             'fetch-dump': {},
             'save-dump': {'name': 'train_df.pkl'},
-            'init-dataframe': {},
+            'fetch-data-and-classifier': {},
+            'init-dataframe-from-dataset': {},
+            'init-dataframe-from-filenames': {},
             'dewarp': {'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')},
             'fetch-train-test-dump': {'train': {}, 'test': {}}
         }, get_config())
@@ -60,7 +62,9 @@ class PipelineTest(unittest.TestCase):
                 'name': 'my-dump.pkl',
             },
             'save-dump': {},
-            'init-dataframe': {},
+            'init-dataframe-from-dataset': {},
+            'init-dataframe-from-filenames': {},
+            'fetch-data-and-classifier': {},
             'dewarp': {
                 'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
             },
@@ -77,7 +81,7 @@ class PipelineTest(unittest.TestCase):
             'fetch-dump': {
                 'name': 'my-dump.pkl',
             },
-            'init-dataframe': {},
+            'init-dataframe-from-dataset': {},
             'dewarp': {
                 'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
             }

@@ -7,7 +7,7 @@ import unittest
 
 import pandas as pd
 
-from billys.steps import build, fetch
+from billys.steps import build_dataframe_from_dataset, build_dataframe_from_filenames, fetch_dataset, fetch_filenames, revert
 from billys.steps import show, skip
 
 # pylint: disable=missing-class-docstring
@@ -39,13 +39,13 @@ class StepsTest(unittest.TestCase):
     def test_skip(self):
         self.assertTrue(skip(self.df).equals(self.df))
 
-    def test_fetch(self):
-        dataset = fetch('/tmp')
+    def test_fetch_dataset(self):
+        dataset = fetch_dataset('/tmp')
         self.assertEqual(dataset.filenames, ['/tmp/billys/train/cat1/1.png'])
 
-    def test_build(self):
-        dataset = fetch('/tmp')
-        df = build(dataset, True)
+    def test_build_dataframe_from_dataset(self):
+        dataset = fetch_dataset('/tmp')
+        df = build_dataframe_from_dataset(dataset, True)
         df.equals(pd.DataFrame(data={
                   'filename': ['/tmp/billys/train/cat1/1.png'],
                   'target': [0],
@@ -55,8 +55,8 @@ class StepsTest(unittest.TestCase):
                   'good': [True],
                   'is_pdf': [False]}))
 
-    # TODO: dewarp
-    # TODO: contrast
-    # TODO: ocr
-    # TODO: feat extr.
-    # TODO: classification
+        # TODO: dewarp
+        # TODO: contrast
+        # TODO: ocr
+        # TODO: feat extr.
+        # TODO: classification
