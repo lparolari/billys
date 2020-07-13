@@ -5,19 +5,17 @@ Common and shared pipeline steps.
 from billys.util import ensure_dir, get_data_home, make_dataset_filename, read_file
 import logging
 import os
-from typing import Optional, Any
+from typing import Optional, Any, List
 
 import cv2
 import pandas as pd
 import piexif
 from PIL import Image, ImageEnhance, ImageOps
 
-from billys.dataset import fetch_billys, make_dataframe
+from billys.dataset import fetch_billys, make_dataframe_from_dataset, make_dataframe_from_filenames, make_filename
 from billys.dewarp.dewarp import dewarp_image, make_model
 from billys.ocr.ocr import ocr_data
-from billys.text.preprocessing import (to_lower, remove_accented_chars, remove_punctuation,
-                                       remove_nums, remove_stopwords, lemmatize, tokenize,
-                                       download_stopwords, make_nlp)
+from billys.text.preprocessing import preprocess, make_nlp, download_stopwords
 from billys.text.classification import train
 from billys.util import get_filename, read_file, save_file, read_dump, save_dump, read_image, save_image
 
@@ -104,7 +102,7 @@ Dataset initialization pipeline steps
 """
 
 
-def fetch(data_home: Optional[str] = None, name: str = 'billys', subset: str = 'train'):
+def fetch_dataset(data_home: Optional[str] = None, name: str = 'billys', subset: str = 'train'):
     """
     Fetch the dataset from the path with logic in :func:`billys.util.get_data_home` and
     return it.
@@ -125,28 +123,102 @@ def fetch(data_home: Optional[str] = None, name: str = 'billys', subset: str = '
     return fetch_billys(data_home=data_home, name=name, subset=subset)
 
 
-def build(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFrame:
+def fetch_filenames(filenames, data_home=None) -> List[str]:
     """
-    Initialize the dataframe from given dataset.
+    Fetch images filenames.
 
     Parameters
     ----------
-    dataset: required
+    filenames
+            A list of image names
+        or, a single image file name
+        or, a directory name
+
+        Note: the image path must be specified with the `data_home` param.
+
+    data_home
+        The path to data.
+
+    Returns
+    -------
+    filenames
+        A list of filenames.
+    """
+    if type(filenames) is list:
+        # it is already a list of filenames,
+        # just join them with data_home
+        return [get_filename(filename, data_home=data_home) for filename in filenames]
+
+    if type(filenames) is str:
+        if os.path.isfile(filenames):
+            # it is a single filename
+            return [get_filename(filenames, data_home=data_home)]
+        else:
+            # it is a directory, get the list of files
+            from os import listdir
+            path = filenames
+
+            fq_filenames = [get_filename(os.path.join(path, filename), data_home=data_home)
+                            for filename in listdir(get_filename(path, data_home=data_home))]
+
+            # Note: os.path.isfile does not works, don't know why.
+            def isfile(fn): return len(os.path.splitext(fn)) >= 2
+
+            return [fn for fn in fq_filenames if isfile(fn)]
+
+
+def fetch_data_and_classifier(dataset: str, classifier: str, data_home: str = None):
+    return {
+        'dataset': revert(dataset, data_home=data_home),
+        'classifier': revert(classifier, data_home=data_home)['classifier']
+    }
+
+
+def build_dataframe_from_dataset(dataset, force_good: bool = False, subset: str = 'train') -> pd.DataFrame:
+    """
+    Initialize the dataframe from given dataset. The dataset
+    can be used for the training phase.
+
+    Parameters
+    ----------
+    dataset
         The dataset loaded with :func:`billys.dataset.fetch_billys`.
 
     subset
         The subset of loaded dataset. Can be one of 'train', 'test'.
 
-    force_good: default: False
+    force_good
         Force all the samples in the dataframe to be marked as good and skip
         some pipeline steps like dewarping and contrast aumentation.
 
     Returns
     -------
     df
-        A new dataframe built with :func:`billys.dataset.make_dataframe`.
+        A new dataframe built with :func:`billys.dataset.make_dataframe_from_dataset`.
     """
-    return make_dataframe(dataset=dataset, force_good=force_good, subset=subset)
+    return make_dataframe_from_dataset(dataset=dataset, force_good=force_good, subset=subset)
+
+
+def build_dataframe_from_filenames(filenames: List[str], force_good: bool = False) -> pd.DataFrame:
+    """
+    Initialize the dataframe from given filenames. The dataset
+    can be used only for the classification task.
+
+    Parameters
+    ----------
+    filenames
+        A list of filenames loaded with :func:`billys.dataset.fetch_filenames`.
+
+    force_good
+        Force all the samples in the dataframe to be marked as good and skip
+        some pipeline steps like dewarping and contrast aumentation.
+
+    Returns
+    -------
+    df
+        A new dataframe built with :func:`billys.dataset.make_dataframe_from_filenames`.
+    """
+    return make_dataframe_from_filenames(filenames=filenames, force_good=force_good)
 
 
 """
@@ -163,8 +235,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     Parameters
     ----------
     df
-        The dataset as a dataframe. Required columns are
-            'filename', 'grayscale', 'is_good'
+        The dataset as a dataframe.
 
     homography_model_path
         The path to the homography model file in `.h5` format.
@@ -173,39 +244,36 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
     -------
     df
         A new dataframe with follwing changes
-         * 'is_pdf', dropped
-         * 'is_good', dropped
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in [
-        'filename', 'is_pdf', 'is_good']]].copy()
+    df_out = df.copy()
 
     homography_model = make_model(homography_model_path)
     new_filename_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
-        grayscale = row['grayscale']
-        is_pdf = row['is_pdf']
         is_good = row['is_good']
-        target_name = row['target_name']
-        subset = row['subset']
-        imdata = read_image(filename, is_pdf=is_pdf)
+
+        new_filename = make_filename(row, step='dewarp')
+        new_filename_list.append(new_filename)
 
         if not is_good:
             # Dewarp the image only if it is bad.
             logging.debug(f'Dewarping image {filename}')
+            grayscale = row['is_grayscale']
+            is_pdf = row['is_pdf']
+
+            imdata = read_image(filename, is_pdf=is_pdf)  # read
+
             dewarped_imdata = dewarp_image(
-                imdata, homography_model, grayscale=grayscale)
+                imdata, homography_model, grayscale=grayscale)  # dewarp
+
+            save_image(new_filename, dewarped_imdata)  # save
         else:
             logging.debug(f'Skipping dewarp for {filename}')
-            dewarped_imdata = imdata
-
-        new_filename = make_dataset_filename(
-            filename=filename, step='dewarp', subset=subset, cat=target_name)
-        new_filename_list.append(new_filename)
-
-        save_image(new_filename, dewarped_imdata)
+            from shutil import copyfile
+            copyfile(filename, new_filename)
 
     df_out['filename'] = new_filename_list
 
@@ -229,15 +297,12 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in [
-        'filename']]].copy()
+    df_out = df.copy()
 
     new_filename_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
-        subset = row['subset']
-        target_name = row['target_name']
 
         img = Image.open(filename)
 
@@ -268,11 +333,9 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
                 elif orientation == 8:
                     img = img.rotate(90, expand=True)
 
-        new_filename = make_dataset_filename(
-            filename=filename, step='rotation', subset=subset, cat=target_name)
+        new_filename = make_filename(row, step='rotation')
         new_filename_list.append(new_filename)
 
-        ensure_dir(new_filename)
         save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
@@ -297,15 +360,12 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in [
-        'filename']]].copy()
+    df_out = df.copy()
 
     new_filename_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
-        subset = row['subset']
-        target_name = row['target_name']
 
         img = Image.open(filename)
 
@@ -319,11 +379,9 @@ def brightness(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(brightness)
 
-        new_filename = make_dataset_filename(
-            filename=filename, step='brightness', subset=subset, cat=target_name)
+        new_filename = make_filename(row, step='brightness')
         new_filename_list.append(new_filename)
 
-        ensure_dir(new_filename)
         save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
@@ -348,17 +406,12 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
         A new dataframe with follwing changes
          * 'filename', overwrited with new dewarped filenames
     """
-    df_out = df[[column for column in df.columns if column not in [
-        'filename']]].copy()
-
-    print(df_out)
+    df_out = df.copy()
 
     new_filename_list = []
 
     for index, row in df.iterrows():
         filename = row['filename']
-        subset = row['subset']
-        target_name = row['target_name']
 
         img = Image.open(filename)
 
@@ -372,11 +425,9 @@ def contrast(df: pd.DataFrame) -> pd.DataFrame:
 
         img = img.enhance(contrast)
 
-        new_filename = make_dataset_filename(
-            filename=filename, step='contrast', subset=subset, cat=target_name)
+        new_filename = make_filename(row, step='contrast')
         new_filename_list.append(new_filename)
 
-        ensure_dir(new_filename)
         save_image(new_filename, img, dpi=(300, 300), engine='pil')
 
     df_out['filename'] = new_filename_list
@@ -399,7 +450,7 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
         The dataset as a dataframe.
 
     Returns
-    ------- 
+    -------
     df
         A new dataframe with a new column `ocr` that contains a dict
         with extracted features from image. The type of every value
@@ -449,8 +500,6 @@ def show_boxed_text(df: pd.DataFrame):
     for index, row in df.iterrows():
         ocr_dict = row['ocr']
         filename = row['filename']
-        target_name = row['target_name']
-        subset = row['subset']
         imdata = read_image(filename, is_pdf=False)
 
         logging.debug(f'Boxing image {filename}')
@@ -465,10 +514,8 @@ def show_boxed_text(df: pd.DataFrame):
 
         img = cv2.resize(imdata, (500, 700))
 
-        new_filename = make_dataset_filename(
-            filename=filename, step='boxed', subset=subset, cat=target_name)
+        new_filename = make_filename(row, step='boxed')
 
-        ensure_dir(new_filename)
         save_image(new_filename, img)
 
     return df
@@ -522,12 +569,7 @@ def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
 
         logging.debug(f'Preprocessing text for {filename}')
 
-        text = to_lower(text)
-        text = remove_accented_chars(text)
-        text = remove_punctuation(text)
-        # text = lemmatize(text, nlp)
-        text = remove_nums(text)
-        text = remove_stopwords(text)
+        text = preprocess(text=text, nlp=nlp, use_lemmatize=False)
 
         text_list.append(text)
 
@@ -570,3 +612,13 @@ def train_classifier(data):
                 X_test=X_test, y_test=y_test)
 
     return {'data': data, 'classifier': clf}
+
+
+def classify(data):
+    dataset, classifier = data['dataset'], data['classifier']
+
+    target_names = ['acqua', 'luce', 'gas', 'garbage', 'internet e telefonia']
+    target_names.sort()
+
+    print([target_names[target]
+           for target in classifier.predict(dataset['text'])])

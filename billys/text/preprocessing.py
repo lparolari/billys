@@ -9,6 +9,17 @@ import unidecode
 import it_core_news_sm
 
 
+def preprocess(text: str, nlp, use_lemmatize: bool = False) -> str:
+    text = to_lower(text)
+    text = remove_accented_chars(text)
+    text = remove_punctuation(text)
+    if use_lemmatize:
+        text = lemmatize(text, nlp)
+    text = remove_nums(text)
+    text = remove_stopwords(text)
+    return text
+
+
 def make_nlp():
     return it_core_news_sm.load()  # spacy.load('it_core_news_sm')
 

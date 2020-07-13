@@ -17,11 +17,11 @@ from PIL import Image, ImageEnhance, ImageOps
 import deepmerge
 
 from billys.steps import dump, revert, show, skip
-from billys.steps import build, fetch
+from billys.steps import build_dataframe_from_dataset, build_dataframe_from_filenames, fetch_dataset, fetch_filenames, fetch_data_and_classifier
 from billys.steps import brightness, contrast, dewarp, rotation
 from billys.steps import ocr, show_boxed_text
 from billys.steps import extract_text, preprocess_text
-from billys.steps import train_classifier
+from billys.steps import train_classifier, classify
 from billys.util import get_elapsed_time, now, get_data_home, identity
 
 
@@ -47,12 +47,14 @@ class PresetConfig:
         'preprocess_train_dataset',
         'preprocess_test_dataset',
         'do_train',
+        'preprocess_classify',
+        'classify',
     ]
 
     PRECOMPILED_STEPS = {
         'preprocess_train_dataset': [
             'fetch-billys',
-            'init-dataframe',
+            'init-dataframe-from-dataset',
             'dewarp',
             'rotation',
             'brightness',
@@ -65,7 +67,7 @@ class PresetConfig:
         ],
         'preprocess_test_dataset': [
             'fetch-billys',
-            'init-dataframe',
+            'init-dataframe-from-dataset',
             'dewarp',
             'rotation',
             'brightness',
@@ -76,18 +78,40 @@ class PresetConfig:
             'preprocess-text',
             'save-dump',
         ],
-        'do_train': ['fetch-train-test-dump', 'train-classifier', 'save-dump']
+        'do_train': [
+            'fetch-train-test-dump',
+            'train-classifier',
+            'save-dump'
+        ],
+        'preprocess_classify': [
+            'fetch-filenames',
+            'init-dataframe-from-filenames',
+            # 'dewarp',
+            # 'rotation',
+            # 'brightness',
+            'contrast',
+            'ocr',
+            'show-boxed-text',
+            'extract-text',
+            'preprocess-text',
+            'print',
+            'save-dump',
+        ],
+        'classify': [
+            'fetch-data-and-classifier',
+            'classify',
+        ]
     }
 
     PRECOMPILED_CONFIG = {
         'preprocess_train_dataset':  {
             'save-dump': {
-                'name': f'train_df.pkl'
+                'name': 'train_df.pkl'
             }
         },
         'preprocess_test_dataset': {
             'save-dump': {
-                'name': f'test_df.pkl'
+                'name': 'test_df.pkl'
             }
         },
         'do_train': {
@@ -103,6 +127,23 @@ class PresetConfig:
                 'name': 'trained_classifier.pkl'
             }
         },
+        'preprocess_classify': {
+            'fetch-filenames': {
+                'filenames': 'new_images',
+            },
+            'save-dump': {
+                'name': 'preprocessed_df.pkl',
+            }
+        },
+        'classify': {
+            'fetch-data-and-classifier': {
+                'dataset': 'preprocessed_df.pkl',
+                'classifier': 'trained_classifier.pkl',
+            },
+            'build-dataframe-from-filenames': {
+                'force_good': True,
+            }
+        }
     }
 
     def __init__(self, stage: str):
@@ -184,11 +225,16 @@ def get_config(custom=(PresetConfig(stage='preprocess_train_dataset').get_config
             * data_home:                                str, optional
             * name:                                     str, required
 
-        init-dataframe: dict, default={}
-            Configuration for init-dataframe step.
+        init-dataframe-from-dataset: dict, default={}
+            Configuration for init-dataframe-from-dataset step.
             Available parameters
             * force_good:                              bool, optional
             * subset:                                   str, optional
+
+        init-dataframe-from-filenames: dict, default={}
+            Configuration for init-dataframe-from-filenames step.
+            Available parameters
+            * force_good:                              bool, optional
 
         dewarp: dict, default={}
             Configuration for dewarp step.
@@ -200,6 +246,21 @@ def get_config(custom=(PresetConfig(stage='preprocess_train_dataset').get_config
             Available parameters
             * train.name                                str, required
             * test.name                                 str, required
+
+        fetch-filenames: dict, default={}
+            Configuration for filenames fetching step.
+            Available parameters
+            * filenames                    List[str] or str, required
+              the list of image filenames or a single filename
+              or a directory name
+            * data_home                                 str, optional
+
+        fetch-data-and-classifier: dict, default={}
+            Configuration for fetch classification data.
+            Available parameters
+            * dataset                                   str, required
+            * classifier                                str, required
+            * data_home                                 str, optional
 
         Please for further details refer to steps functions documentation.
 
@@ -236,14 +297,16 @@ def get_config(custom=(PresetConfig(stage='preprocess_train_dataset').get_config
         'fetch-billys': {},
         'fetch-dump': {},
         'save-dump': {},
-        'init-dataframe': {},
+        'init-dataframe-from-dataset': {},
+        'init-dataframe-from-filenames': {},
         'dewarp': {
             'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
         },
         'fetch-train-test-dump': {
             'train': {},
             'test': {}
-        }
+        },
+        'fetch-data-and-classifier': {}
     }
 
     # Merge given config with defaults.
@@ -264,11 +327,14 @@ def make_steps(step_list: List[str] = get_steps(), config=get_config()):
     logging.debug(f'Building steps {step_list} with config {config}')
 
     available_steps = {
-        'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
+        'fetch-billys': lambda *_: fetch_dataset(**config.get('fetch-billys')),
         'fetch-dump': lambda *_: revert(**config.get('fetch-dump')),
         'fetch-train-test-dump': lambda *_: tuple([revert(**config.get('fetch-train-test-dump').get('train')), revert(**config.get('fetch-train-test-dump').get('test'))]),
         'save-dump': lambda *x: dump(*x, **config.get('save-dump')),
-        'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
+        'fetch-filenames': lambda *_: fetch_filenames(**config.get('fetch-filenames')),
+        'fetch-data-and-classifier': lambda *_: fetch_data_and_classifier(**config.get('fetch-data-and-classifier')),
+        'init-dataframe-from-dataset': lambda *x: build_dataframe_from_dataset(*x, **config.get('init-dataframe-from-dataset')),
+        'init-dataframe-from-filenames': lambda *x: build_dataframe_from_filenames(*x, **config.get('init-dataframe-from-filenames')),
         'print': lambda *x: show(*x),
         'dewarp': lambda *x: dewarp(*x, **config.get('dewarp')),
         'rotation': rotation,
@@ -279,6 +345,7 @@ def make_steps(step_list: List[str] = get_steps(), config=get_config()):
         'extract-text': extract_text,
         'preprocess-text': preprocess_text,
         'train-classifier': train_classifier,
+        'classify': classify,
     }
 
     to_do_steps = []

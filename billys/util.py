@@ -5,7 +5,7 @@ import os.path
 import time
 from decimal import ROUND_HALF_UP, Decimal
 from pickle import load, dump
-from typing import Any, Optional
+from typing import List, Any, Optional
 
 from pdf2image import convert_from_path
 
@@ -250,3 +250,9 @@ def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
     else:
         loggin.warning(
             f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
+
+
+def sort(xs: List[Any]) -> List[Any]:
+    xs_copy = xs.copy()
+    xs_copy.sort()
+    return xs_copy
