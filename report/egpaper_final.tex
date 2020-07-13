@@ -129,7 +129,14 @@ Speak about different classification alternatives like naive bayes, svm ecc ecc 
 \section{Experiments}
 
 \subsection{Dewarping or not?}
-Explain how the results are affected by prospective issues.
+As already widely discussed in the articles \cite{Improvingcamera-based} and \cite{recoveringhomography} the dewarping phase (also the deskew phase) is essential to improve the performance of Tesseract. We could confirm this fact with this experiment: we proccessed the same image, one time without dewarping it and the next time with the dewarping correction. If we highlight the extracted words in the two corresponding images we could see that there is a huge difference. Infact if we take a look at the figure \ref{dewarping-experiment} we could see that in the image without the dewarping correction the highlighted word are less than the same image dewarped and also the output is more precise and with fewer unneccesary random words that Tesseract could try to "guess". We could report that the extracted text for the non-dewarped image contains 708 words but a lot of them are blank spaces, while for the dewarped image the amout of extacted words are 491 but the output in this case is more precise and there are fewer blank spaces.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.48\textwidth]{images/dewarping-experiment.png}
+	\caption{Difference with and without dewarped text extraction}
+	\label{dewarping-experiment}
+\end{figure}
 
 \subsection{Camera taken illuminance quality}
 We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the contrast and the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase contrast and brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness and Constrast Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same.
