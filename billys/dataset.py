@@ -243,7 +243,7 @@ def drop_isvalid_column(df):
     df.drop('is_valid', axis=1, inplace=True)
 
 
-def make_filename(row, step: str = None):
+def make_filename(row, step: str = None, ext: str = None):
     """
     Build an image filename based on its stage. Possible stages
     are
@@ -270,8 +270,14 @@ def make_filename(row, step: str = None):
     from billys.constant import USE_DATASET_STRUCTURE
 
     if USE_DATASET_STRUCTURE:
+        filename = row['filename']
+        # TODO: remove this shitty if
+        if ext is not None:
+            new_filename = f'{os.path.splitext(filename)[0]}.{ext}'
+        else:
+            new_filename = filename
         return make_dataset_filename(
-            filename=row['filename'],
+            filename=new_filename,
             cat=row['target_name'],
             subset=row['subset'],
             step=step)
@@ -280,4 +286,9 @@ def make_filename(row, step: str = None):
         now = datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S-%f')
         base_filename = os.path.basename(row['filename'])
-        return os.path.join(get_data_tmp(), step, base_filename)
+        # TODO: remove this shitty if
+        if ext is not None:
+            new_filename = f'{os.path.splitext(base_filename)[0]}.{ext}'
+        else:
+            new_filename = base_filename
+        return os.path.join(get_data_tmp(), step, new_filename)

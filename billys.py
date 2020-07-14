@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Optional
 
-from billys.pipeline import train_pipeline, classify_pipeline
+from billys.pipeline import train_pipeline, classify_pipeline, classify_deterministic_pipeline, train_deterministic_pipeline, classify_2_pipeline
 from billys.util import get_log_level
 
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='TODO')
 
-    parser.add_argument('stage', type=str, default=None, choices=['train', 'classify'],
+    parser.add_argument('stage', type=str, default=None, choices=['train', 'classify', 'train-bow', 'classify-bow'],
                         nargs='?', help='Do the training from dataset')
 
     parser.add_argument('--config', metavar='config', type=str, default=None,
@@ -93,7 +93,11 @@ if __name__ == "__main__":
         if stage == 'train':
             train_pipeline(**config)
         elif stage == 'classify':
-            classify_pipeline(**config)
+            classify_2_pipeline(**config)
+        elif stage == 'train-bow':
+            train_deterministic_pipeline(**config)
+        elif stage == 'classify-bow':
+            classify_deterministic_pipeline(**config)
         else:
             raise ValueError(f'The stage {stage} is not valid.')
     else:

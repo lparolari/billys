@@ -12,7 +12,7 @@ Steps are categorized in
 * images processing, transform images and process them
 * text processing, extract text features and process them
 * classifier training, train the classifier
-* classification, do the image classification part 
+* classification, do the image classification part
 """
 
 import logging
@@ -33,7 +33,7 @@ from billys.text.preprocessing import download_stopwords, make_nlp, preprocess
 from billys.util import (ensure_dir, get_data_home, get_filename,
                          make_dataset_filename, read_dump, read_file,
                          read_image, save_dump, save_file, save_image)
-
+from sklearn import metrics
 
 """
 Shared pipeline steps.
@@ -196,7 +196,7 @@ def fetch_filenames(filenames: Union[List[str], str], data_home=None) -> List[st
 def build_dataframe(input_data, input_type: str, force_good: bool = False) -> pd.DataFrame:
     """
     Initialize the DataFrame for the pipeline from input, setting
-    the stage `stage` and forcing images as good if `force_good` 
+    the stage `stage` and forcing images as good if `force_good`
     holds.
 
     Parameters
@@ -237,7 +237,7 @@ def build_dataframe(input_data, input_type: str, force_good: bool = False) -> pd
 
 def convert_to_images(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert all pdf in `df` to images, and copy file that are 
+    Convert all pdf in `df` to images, and copy file that are
     already images without changes.
 
     Parameters
@@ -261,11 +261,13 @@ def convert_to_images(df: pd.DataFrame) -> pd.DataFrame:
         filename = row['filename']
         is_pdf = row['is_pdf']
 
-        new_filename = make_filename(row, step='to_image')
+        new_filename = make_filename(row, step='to_image', ext='jpg')
         new_filename_list.append(new_filename)
 
         if is_pdf:
             logging.debug(f'Converting image {filename}')
+            logging.debug(f'New filename {new_filename}')
+
             # read image, even if it is a pdf, and write it as
             # a real image.
             imdata = read_image(filename, is_pdf=is_pdf)
@@ -335,7 +337,7 @@ def dewarp(df: pd.DataFrame, homography_model_path: str) -> pd.DataFrame:
         else:
             logging.debug(f'Skipping dewarp for {filename}')
             from shutil import copyfile
-            ensure_dir(filename)
+            ensure_dir(new_filename)
             copyfile(filename, new_filename)
 
     df_out['filename'] = new_filename_list
@@ -506,7 +508,7 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     -------
     df
         A new dataframe with the following changes:
-        - `ocr`, new column; contains a dict with extracted text 
+        - `ocr`, new column; contains a dict with extracted text
            features from image. See :func:`billys.ocr.ocr.ocr_data`
            for further information on the type of this column.
     """
@@ -569,6 +571,7 @@ def show_boxed_text(df: pd.DataFrame):
         img = cv2.resize(imdata, (500, 700))
 
         new_filename = make_filename(row, step='boxed')
+        logging.debug(f'New filename {new_filename}')
 
         save_image(new_filename, img)
 
@@ -621,7 +624,7 @@ def extract_text(df: pd.DataFrame) -> pd.DataFrame:
 def preprocess_text(df: pd.DataFrame) -> pd.DataFrame:
     """
     Preprocess textual features with a common text preprocessing
-    pipeline. For further details, see 
+    pipeline. For further details, see
         :func:`billys.text.preprocessing.preprocess`.
 
     Parameters
@@ -668,7 +671,7 @@ Text classification steps
 def train_classifier(df: pd.DataFrame):
     """
     Train the classifier and returns it. The classifier specification
-    is given in 
+    is given in
         :func:`billys.text.classification.train`.
 
     Parameters
@@ -719,3 +722,114 @@ def classify(df: pd.DataFrame, clf):
 
     texts = df['text'].tolist()
     return clf.predict(texts)
+
+
+def train_bow(df):
+    # TODO: docs
+
+    bag_of_words_per_category = []
+
+    for i in range(5):
+        cat = df[df['target'] == i]
+
+        data = cat['text']
+
+        from sklearn.feature_extraction.text import CountVectorizer
+
+        # use the scikit vectorized for creating the bag of words
+        vectorizer = CountVectorizer().fit(data)
+        bag_of_words = vectorizer.transform(data)
+
+        # create the sum of the bag of words in order to represent frequencies
+        sum_words = bag_of_words.sum(axis=0)
+
+        words_freq = [(word, sum_words[0, idx])
+                      for word, idx in vectorizer.vocabulary_.items()]
+        words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
+
+        # print(len(words_freq))
+        words_freq = words_freq[:(int(len(words_freq) * 0.1))]
+
+        # if f <= 10 and f >= 2]
+        words_freq = [(w, f) for (w, f) in words_freq if (
+            f <= 10 * len(cat) and f >= len(cat))]
+        print(words_freq)
+
+        bag_of_words_per_category.append(words_freq)
+
+    dump(bag_of_words_per_category, name='bag_of_words.pkl')
+
+
+def classify_bow(df):
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    target_names = revert('target_names.pkl')
+    target_names.append("sconosciuto")
+
+    predicted = []
+
+    for index, row in df.iterrows():
+
+        data = [row['text']]
+        filename = row['filename']
+
+        if data == ['']:
+            predicted.append(5)
+            continue
+
+        # use the scikit vectorized for creating the bag of words
+        vectorizer = CountVectorizer().fit(data)
+        bag_of_words = vectorizer.transform(data)
+
+        # create the sum of the bag of words in order to represent frequencies
+        sum_words = bag_of_words.sum(axis=0)
+
+        words_freq = [(word, sum_words[0, idx])
+                      for word, idx in vectorizer.vocabulary_.items()]
+        words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
+
+        # print(len(words_freq))
+        # words_freq = words_freq[:]
+        # print(words_freq)
+
+        # kws_per_category = revert('bag_of_words.pkl')
+
+        kws_per_category = [['acqua', 'idrico', 'depurazione', 'fognatura', 'trevigiano'],
+                            ['spazzatura', 'immondizia', 'riciclato',
+                                'riciclo', 'rifiuti', 'rifiuto', 'savno'],
+                            ['gas', 'naturale'],
+                            ['luce', 'energia', 'tensione', 'potenza',
+                                'elettricita', 'elettrico', 'elettrica'],
+                            ['telefonia', 'telefonico', 'internet', 'ricaricabile', 'ricarica',
+                             'cellulare', 'navigazione', 'telecom', 'vodafone', 'tim']]
+        best_cat = 5
+        max_freq = -1
+        max_word = "XXX"
+
+        import numpy as np
+
+        for j in range(5):
+
+            kws = kws_per_category[j]
+
+            for i in range(len(kws)):
+                kw = kws[i]
+                for (w, f) in words_freq:
+                    if (w in kw and np.abs(len(w) - len(kw)) <= 1 and f > max_freq):
+                        best_cat = j
+                        max_freq = f
+                        max_word = w
+
+        print(filename, best_cat, "   ", max_freq, max_word)
+        # if row['target'] == 0:
+        #     print(row['text'])
+
+        predicted.append(best_cat)
+
+    # print(predicted)
+    # print(df['target'].tolist())
+    # print(target_names)
+
+    print(metrics.classification_report(
+        df['target'].tolist(), predicted, target_names=target_names))
+    # print(metrics.confusion_matrix(df['target'], predicted))

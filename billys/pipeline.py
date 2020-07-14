@@ -59,6 +59,8 @@ def train_pipeline(data_home=None,
 
     clf = train_classifier(df)
 
+    from sklearn import metrics
+
     dump(target_names, name=targets_dump_name)
     dump(clf, name=classifier_dump_name, data_home=data_home)
 
@@ -66,7 +68,7 @@ def train_pipeline(data_home=None,
 
 
 def classify_pipeline(data_home=None,
-                      filenames='new_images',
+                      filenames='billys_warped',
                       force_good=True,
                       classifier_dump_name='trained_classifier.pkl',
                       targets_dump_name='target_names.pkl'):
@@ -96,6 +98,10 @@ def classify_pipeline(data_home=None,
 
     predicted = classify(df, clf)
 
+    print(metrics.classification_report(
+        df['target'].tolist(), predicted, target_names=target_names))
+    metrics.confusion_matrix(df['target'], predicted)
+
     logging.info(f'Target names: {target_names}')
 
     for i in range(len(filenames)):
@@ -104,3 +110,125 @@ def classify_pipeline(data_home=None,
         print(f'{filename} => {target_name}')
 
     return predicted
+
+
+def classify_2_pipeline(data_home=None,
+                        dataset_name='billys_warped',
+                        force_good=False,
+                        classifier_dump_name='trained_classifier_DEFINITIVO.pkl',
+                        targets_dump_name='target_names.pkl',
+                        homography_model_path=os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')):
+
+    billys_const.USE_DATASET_STRUCTURE = True
+
+    logging.debug(
+        f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
+
+    clf = revert(name=classifier_dump_name, data_home=data_home)
+    target_names = revert(name=targets_dump_name, data_home=data_home)
+
+    # datasets = fetch_dataset(dataset_name, data_home=data_home)
+
+    # df = build_dataframe(
+    #     datasets, input_type='datasets', force_good=force_good)
+
+    # df = convert_to_images(df)
+    # # df = log(df)
+    # df = dewarp(df, homography_model_path=homography_model_path)
+    # df = rotation(df)
+    # df = brightness(df)
+    # df = contrast(df)
+    # df = ocr(df)
+    # df = extract_text(df)
+    # df = preprocess_text(df)
+
+    # dump(df, name='new_warped_bills_preprocessed.pkl')
+
+    from sklearn import metrics
+
+    df = revert('dataset_DEFINITIVO.pkl')
+
+    df = extract_text(df)
+    df = preprocess_text(df)
+
+    predicted = classify(df, clf)
+
+    logging.info(f'Target names: {target_names}')
+
+    filenames = df['filename'].tolist()
+
+    for i in range(len(df['filename'])):
+        filename = filenames[i]  # df.loc[i]['filename']  # filenames[i]
+        target_name = target_names[predicted[i]]
+        print(f'{filename} => {target_name}')
+
+    print(metrics.classification_report(
+        df['target'].tolist(), predicted, target_names=target_names))
+    # print(metrics.confusion_matrix(df['target'], predicted))
+
+    return predicted
+
+
+def train_deterministic_pipeline():
+    """
+    TODO
+    """
+    df = revert('dataset_DEFINITIVO.pkl')
+
+    # df = show_boxed_text(df)
+    df = extract_text(df)
+    df = preprocess_text(df)
+
+    from billys.steps import train_bow
+
+    train_bow(df)
+
+
+def classify_deterministic_pipeline(
+    data_home=None,
+    filenames='new_images',
+    force_good=True,
+    # classifier_dump_name='trained_classifier.pkl',
+    # targets_dump_name='target_names.pkl'
+):
+    """
+    TODO
+    """
+    # billys_const.USE_DATASET_STRUCTURE = False
+
+    # logging.debug(
+    #     f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
+
+    # clf = revert(name=classifier_dump_name, data_home=data_home)
+    # target_names = revert(name=targets_dump_name, data_home=data_home)
+
+    # filenames = fetch_filenames(filenames, data_home=data_home)
+
+    # df = build_dataframe(
+    #     filenames, input_type='filenames', force_good=force_good)
+
+    # df = convert_to_images(df)
+    # # df = log(df)
+    # # df = dewarp(df, homography_model_path=homography_model_path)
+    # df = rotation(df)
+    # df = brightness(df, gain=1.0)
+    # df = contrast(df, gain=1.0)
+    # df = ocr(df)
+    # df = show_boxed_text(df)
+    # df = extract_text(df)
+    # df = preprocess_text(df)
+
+    df = revert('dataset_DEFINITIVO.pkl')
+
+    df = extract_text(df)
+    df = preprocess_text(df)
+
+    for index, row in df.iterrows():
+        if row['target'] == 0:
+
+            print(row['ocr']['text'])
+            print(row['text'])
+            print()
+
+    from billys.steps import classify_bow
+    classify_bow(df)
