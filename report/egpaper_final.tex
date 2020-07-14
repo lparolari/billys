@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{comment}
 
 % Include other packages here, before hyperref.
 
@@ -59,7 +60,9 @@ The purpose of our work is to classify bills about gas, water, garbage, internet
 We couldn't have finded work that perform this particular task on the internet. However different aspect that we had to take care when develop this project have been taken into consideration by several works: primarily the problem of dewarping a camera taken image is essential for our application, in particular for pre-processing the image for the OCR and this problem was faced by \cite{Improvingcamera-based} with his project \cite{mobile-ocr} wich is based upon the experiments conducted by \cite{recoveringhomography}. The second task is to extact all the words contained in a bill: to face this task we relied on Tesseract \cite{Tesseract} wich is a popular open-source OCR developed by Goggle. The last major step is performing the classification wich could be performed by a Naive Bayes Classifier, TODO set references. 
 
 \section{Dataset}
-When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to made our  dataset gathering all the bills that we could find. Our dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our app: take a bill's photo and classify it. The categories provided for our experimet are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
+When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 3 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase, and a third dataset consisisting of bills coming from different providers, not included in the main dataset, to see if the application is able to correctly classify unseen bills.\\
+
+For the main dataset we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
 
 
 \begin{table}[!h]
@@ -79,7 +82,7 @@ When dealing with machine learning applications, in general more data we have  b
 	\caption{Dataset composition}
 \end{table}
 
-In the following summer it is reported all the providers considered per category:
+In the following summer it is reported all the providers considered per category:\\
 
 \begin{itemize}
 	\begin{samepage}
@@ -89,7 +92,8 @@ In the following summer it is reported all the providers considered per category
 		\item \textbf{Electricity}: \\
 		Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera
 	
-		\item \textbf{Gas}: Sorgenia, Ascotrade, Etra Energia, Hera
+		\item \textbf{Gas}:\\
+		Sorgenia, Ascotrade, Etra Energia, Hera
 	
 		\item \textbf{Water}: \\ 
 			Etra, Alto Trevigiano Servizi, Hera
@@ -99,7 +103,17 @@ In the following summer it is reported all the providers considered per category
 	\end{samepage}
 \end{itemize}
 
-Our dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{pipeline}) which is trained on a completely different dataset. In this way we have the assumption that the document document are already dewarped (this tasks could be delegated with another application or coul be substituded) and we are ready to train the final classificator avoiding poor performance due to other previous pre-processing phases. We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
+Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
+
+The second dataset provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
+
+The third and the last dataset used consists of nearly TODO (inserire la quantita) unseen bills belonging to the same categories of the main dataset, but this time we excluded from the main dataset some providers to test after the performance of this application when we present it some new photo of bills coming from new unseen providers. We will see the obtained performance in the experiment section.
+
+\begin{comment}
+#if 0
+TODO: ELIMINARE VISTO CHE NON LO FACCIAMO FORSE We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
+\end{comment}
+
 
 
 \section{Proposed Method}
@@ -116,7 +130,14 @@ verbs often used wich are not important for the final classification. TODO: aggi
 \end{figure*}
 
 \subsection{Image pre-processing phase}
-The image preprocessing phase is in charge of adjusting all the aspect of a mobile camera taken photos. This includes brightness and contrast adjustments, dewarping, skew correction and others. The first task of our pipeline infact is try to recover a flatbed scanned document from a camera taken photos. For this task we used the work done in \cite{mobile-ocr} wich uses an Xcenption Neural Network \cite{xception_NN} to perform this task, with appreciable results according to the article. However in some experiment the network don't correctly adjust the pespective of the photos and for this reason we tried to do a fine-tuning of the network to work better also with our camera taken photos of documents. The last step of the image pre-processing is the correction of the brightness and constrast of the image. This is done because there are critical photos that could arise many problem for the OCR phase and this problems are be better exaplined in the Experiment section.
+The image preprocessing phase is in charge of adjusting all the aspect of a mobile camera taken photos. This includes brightness and contrast adjustments, dewarping, skew correction and others. The first task of our pipeline infact is try to recover a flatbed scanned document from a camera taken photos. For this task we used the work done in \cite{mobile-ocr} wich uses an Xcenption Neural Network \cite{xception_NN} to perform this task, with appreciable results according to the article. In figure \ref{xception-architecture} is reported the Xception architecture used in this application coming from the work done in \cite{Improvingcamera-based}. We have seen that in some experiment the network don't correctly adjust the pespective of the photos and for this reason a future experiment could be to try to do a fine-tuning of the network and see if the network could increase its performances also with our camera taken photos of documents. The last step of the image pre-processing is the correction of the brightness and constrast of the image. This is done because there are critical photos that could arise many problem for the OCR phase and this problems are be better exaplined in the Experiment section.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.48\textwidth]{images/xception-architecture.png}
+	\caption{The Xception architecture used in this work}
+	\label{xception-architecture}
+\end{figure}
 
 \subsection{OCR phase}
 As we have seen this phase is delegated to Tesseract, which is a open-source OCR to extract all the words containded in a image. Tesseract is developed from Google and it is publically available on GitHub. 
@@ -140,15 +161,16 @@ As already widely discussed in the articles \cite{Improvingcamera-based} and \ci
 	\label{dewarping-experiment}
 \end{figure}
 
-\begin{figure}[b]
+
+\subsection{Camera taken illuminance quality}
+We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the contrast and the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase contrast and brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness and Constrast Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same.
+
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=0.4\textwidth]{images/bright-contrast-experiment.png}
 	\caption{Difference with and without brightness and contrast enhancer}
 	\label{bright-constrast-experiment}
 \end{figure}
-
-\subsection{Camera taken illuminance quality}
-We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the contrast and the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase contrast and brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness and Constrast Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same.
 
 
 
