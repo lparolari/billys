@@ -17,6 +17,7 @@ def preprocess(text: str, nlp, use_lemmatize: bool = False) -> str:
         text = lemmatize(text, nlp)
     text = remove_nums(text)
     text = remove_stopwords(text)
+    text = remove_shortwords(text)
     return text
 
 
@@ -37,12 +38,17 @@ def remove_accented_chars(text):
 
 
 def remove_punctuation(text: str) -> str:
-    table = str.maketrans('', '', string.punctuation)
+    table = str.maketrans(string.punctuation, "".join(
+        [' ' for _ in string.punctuation]))
     return text.translate(table)
 
 
 def remove_nums(text: str) -> str:
     return re.sub(r'\d+', '<num>', text)
+
+
+def remove_shortwords(text: str) -> str:
+    return " ".join([word for word in text.split() if len(word) > 2])
 
 
 def remove_stopwords(text: str) -> str:
