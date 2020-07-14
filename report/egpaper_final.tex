@@ -46,6 +46,7 @@ Luca Parolari\\
 %\thispagestyle{empty}
 
 %%%%%%%%% ABSTRACT
+
 \begin{abstract}
 Everyone, sooner or later, has to face the messy world of bills. Every
 month we get four/five or even more bills, coming from different
@@ -61,15 +62,67 @@ steps are then combined in a pipeline which manage the whole process.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
+
 \section{Introduction}
 
-The purpose of our work is to classify bills about gas, water, garbage, internet and ellectricity furnitures and services. There are different aspects to take care of when dealing with camera taken photos, OCRs and document classification. For these reasons we develop a strong pipeline to manage different problems that could occur when dealing with these objects. Another important aspect when dealing with machine learning problems is getting a lot of data (in our case the bills) and the dataset construction. We will investigate all of these aspect in this paper. We are pretty sattisfied with this work because we reached a TODO\% of correct classification considering different metrics like... TODO    
+The purpose of our work is to classify bills into some arbitrarily
+defined categories\footnote{a.k.a., target names or classes}, that can
+fit almost all bill category. This targets should help the used to
+better handle and organize bills for archiviation. We defined five
+classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
+  Recycling} and \emph{Telephone and Cable}. For treatability each to
+each class an integer from $0$ to $4$ is assigned, respectively. Bills
+are the very foundamental component of the whole application. A bill,
+or an invoice, is a commercial document issued by a seller to a buyer,
+relating to a sale transaction and indicating the products,
+quantities, and agreed prices for products or services the seller had
+provided the buyer. In pratical terms, for us, a bill can be a pdf
+file or an image (even a a camera taken image) to process.
 
+The task itself is very complex and can lead to a messy and
+unmantainable solution. For this reason we develop a robust and well
+structured pipeline with the aim to face some of the main problems,
+described below.
+\begin{itemize}
+  \item Image dewarping. Camera taken image are usually not directly
+    processable by an optical recognition tool. In order to perfomr
+    the OCR we have to preprocess the image and rotate, resize and
+    strech the image.
+  \item Contrast/illumination augmentation. Also the illumination of an
+    image can be a nasty problem for an OCR tool, as it needs a clear
+    distinction written text and other stuff in order to read that.
+  \item Optical Character Recognition. This can be a very delicate
+    point, as the application performances depends on how the OCR
+    extracted data from images.
+  \item Text preprocessing. An hige amout of details can be extracted
+    from the OCR, but surely not all of them are relevant for
+    application's purposes. We have to disregard them.
+  \item Feature classification. At the end, owr need is to classify the
+    given object. This is a complex task as document data can be verydifferent and very similar at the same time.
+\end{itemize}
+
+In the following sections we present our work and we face the problems
+described above. We start from related works in Section
+\ref{sec:related-work}, where we discuss about our starting
+point. Then, in Section \ref{sec:dataset}, we present our dataset and
+some information about the context of the data we used. After that, in
+Section \ref{sec:proposed-method}, we show adopted solutions and
+describe smart ideas we used in order to solve the core problem. We
+then explore the pipeline and all its components in order to present
+full details of what we have done. We also show experiments and fails
+we have done before getting nice results in Section
+\ref{sec:experiments}. We conclude then with future works and possible
+enhancements that for concreteness we excluded from this presentation
+and conclusion we wrap up with some considerations about the work in
+Section \ref{sec:future-works} and \ref{sec:conclusion}.
 
 \section{Related Work}
+\label{sec:related-work}
+
 We couldn't have finded work that perform this particular task on the internet. However different aspect that we had to take care when develop this project have been taken into consideration by several works: primarily the problem of dewarping a camera taken image is essential for our application, in particular for pre-processing the image for the OCR and this problem was faced by \cite{Improvingcamera-based} with his project \cite{mobile-ocr} wich is based upon the experiments conducted by \cite{recoveringhomography}. The second task is to extact all the words contained in a bill: to face this task we relied on Tesseract \cite{Tesseract} wich is a popular open-source OCR developed by Goggle. The last major step is performing the classification wich could be performed by a Naive Bayes Classifier, TODO set references. 
 
 \section{Dataset}
+\label{sec:dataset}
 When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 3 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase, and a third dataset consisisting of bills coming from different providers, not included in the main dataset, to see if the application is able to correctly classify unseen bills.\\
 
 For the main dataset we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
@@ -127,6 +180,7 @@ TODO: ELIMINARE VISTO CHE NON LO FACCIAMO FORSE We have noticed that the page-de
 
 
 \section{Proposed Method}
+\label{sec:proposed-method}
 
 We proprosed this pipeline for different reasons. We choose to add an Optical Carachter Recognition in our project because we thought that using a simple CNN to classify the bills could bring some problems like, what are the behaviuor of an CNN in front of a new unseen bill about another supplier. Another reason is the fact that a CNN need a lot of example to be trained and because we have only "few" exaples we prefered to try another approach. So we chose Tesseract to extrapolate all the text inside a bill and then classify the bills accordingly to all the text extracted. In this way we think that a text classification is much more stable in predicting the bill type of a new unseen example, because in an unseen new bill the words extrapoleted are in general the same as the words extracted from the bills included in the dataset. Once we have chosen to include an OCR all the rest of the pipeline is built upon the major drawback already known for OCRs, like image preprocesing (Page dewarping and Brightness \& Contrast Enhancer). Obtained all the text from the bills we need to preproccess also the extrapoleted text before the final step. This part is important for excluding the frequent words like articles and 
 verbs often used wich are not important for the final classification. TODO: aggiungere se serve su questa parte. In the following we dive into the details of the designed pipeline that could be summarized by figure \ref{pipeline}.
@@ -178,6 +232,7 @@ Speak about different classification alternatives like naive bayes, svm ecc ecc 
 
 
 \section{Experiments}
+\label{sec:experiments}
 
 \subsection{Dewarping or not?}
 As already widely discussed in the articles \cite{Improvingcamera-based} and \cite{recoveringhomography} the dewarping phase (also the deskew phase) is essential to improve the performance of Tesseract. We could confirm this fact with this experiment: we proccessed the same image, one time without dewarping it and the next time with the dewarping correction. If we highlight the extracted words in the two corresponding images we could see that there is a huge difference. Infact if we take a look at the figure \ref{dewarping-experiment} we could see that in the image without the dewarping correction the highlighted word are less than the same image dewarped and also the output is more precise and with fewer unneccesary random words that Tesseract could try to "guess". We could report that the extracted text for the non-dewarped image contains 708 words but a lot of them are blank spaces, while for the dewarped image the amout of extacted words are 491 but the output in this case is more precise and there are fewer blank spaces.
@@ -206,8 +261,15 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 \subsection{Machine Learning or Traditional Algorithms?}
 Parlare del confronto tra un classificatore deterministico e un algorimo di machine learning, interessante sarebbec capire chi ha un accuratezza più alta. Confrontare anche con il numero di esempi richiesti.
 
-\section{Conclusion}
+\section{Future Works}
+\label{sec:future-works}
 
+TODO
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+TODO
 
 {\small
 \bibliographystyle{ieee_fullname}
