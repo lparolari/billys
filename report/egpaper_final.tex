@@ -26,7 +26,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{Bills Classificator}
+\title{Bills Classifier}
 
 \author{Bryan Lucchetta\\
 {\small University of Padua}\\
@@ -47,7 +47,17 @@ Luca Parolari\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   Our lives are fully immersed by bills of every type. Every month we receive an average of 4-5 bills to pay about electricity, gas, water, internet and garbage furnitures and services. The goal of this work is to implement a classifier that automatically classify the bills that we received in the past. Given a batch of camera taken pictures of bills the application's task is to classify every bill and then store it inside the appropriate folder. In this way the app could organize better our finances lives. We build a sophisticated pipeline to handle the camera taken pictures, for then passing to an OCR that extract all the text contained in it. Then a simple Naive Bayes classifier is used in order to perform the classification. This is only the first step but it can be improved with more and sopphisticated features like the extraction of consumption, bill amount and deadlines and many more.
+Everyone, sooner or later, has to face the messy world of bills. Every
+month we get four/five or even more bills, coming from different
+providers and about different expenses, with the duty to keep them
+save and easily available in case of need. This task can, even if can
+be quite easy, is very boring for humans. Why don't let that a
+computer do it! The main task of our application is, indeed, to put in
+order this messy world.  In this paper we present our solution to this
+problem. The solution is composed by simple steps, each of them solve
+a different task like image dewarping, contrast/illumination
+augmentation, textual feature extraction, classification. This simple
+steps are then combined in a pipeline which manage the whole process.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
