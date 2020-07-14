@@ -15,6 +15,12 @@
 % run, let it finish, and you should be clear).
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
+% *** Custom commands
+
+\newcommand\codeinline[1]{\texttt{#1}}  % alternatives: \mintinline{bash}{#1} or \mintinline{c++}{#1} or \textit{#1}
+
+% *** Config
+
 \cvprfinalcopy % *** Uncomment this line for the final submission
 
 \def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
@@ -177,7 +183,7 @@ In the following summer it is reported all the providers considered per category
 	\end{samepage}
 \end{itemize}
 
-Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
+Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{fig:pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
 
 The second dataset provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
 
@@ -188,20 +194,17 @@ The third and the last dataset used consists of nearly TODO (inserire la quantit
 TODO: ELIMINARE VISTO CHE NON LO FACCIAMO FORSE We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
 \end{comment}
 
-
-
 \section{Proposed Method}
 \label{sec:proposed-method}
 
 We proprosed this pipeline for different reasons. We choose to add an Optical Carachter Recognition in our project because we thought that using a simple CNN to classify the bills could bring some problems like, what are the behaviuor of an CNN in front of a new unseen bill about another supplier. Another reason is the fact that a CNN need a lot of example to be trained and because we have only "few" exaples we prefered to try another approach. So we chose Tesseract to extrapolate all the text inside a bill and then classify the bills accordingly to all the text extracted. In this way we think that a text classification is much more stable in predicting the bill type of a new unseen example, because in an unseen new bill the words extrapoleted are in general the same as the words extracted from the bills included in the dataset. Once we have chosen to include an OCR all the rest of the pipeline is built upon the major drawback already known for OCRs, like image preprocesing (Page dewarping and Brightness \& Contrast Enhancer). Obtained all the text from the bills we need to preproccess also the extrapoleted text before the final step. This part is important for excluding the frequent words like articles and 
-verbs often used wich are not important for the final classification. TODO: aggiungere se serve su questa parte. In the following we dive into the details of the designed pipeline that could be summarized by figure \ref{pipeline}.
-
+verbs often used wich are not important for the final classification. TODO: aggiungere se serve su questa parte. In the following we dive into the details of the designed pipeline that could be summarized by figure \ref{fig:pipeline}.
 
 \begin{figure*}[h]
-	\centering
-	\includegraphics[width=1.0\textwidth]{images/pipeline.png}
-	\caption{Our pipeline}
-	\label{pipeline}
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/pipeline.png}
+  \caption{Our pipeline}
+  \label{fig:pipeline}
 \end{figure*}
 
 \subsection{Image pre-processing phase}
@@ -235,8 +238,68 @@ The used Xception neural network is trained over 1.5M synthetic images dataset. 
 \subsection{OCR phase}
 As we have seen this phase is delegated to Tesseract, which is a open-source OCR to extract all the words containded in a image. Tesseract is developed from Google and it is publically available on GitHub. 
 
-\subsection{Text-preprocessing phase}
-TODO
+\subsection{Text Preprocessing}
+
+The text preprocessing phase is an important task that may occur
+immediatly after the textual features extraction from images. The aim
+of this task is mainly to preprocess the plain text coming from images
+in order to remove non-relevan features: pratically, it transform the
+text into a more digestible form so that machine learning algorithms
+can perform better.
+
+The implementation of this step follows logical some very simple but
+basic ideas for text preprocessing. In fact we normalize the text into
+its base form. Te inner pipeline for this phase is composed by atomic
+steps, described below. Note that for this task, the execution order of some steps really matters, so we organized them for better results. 
+
+\begin{enumerate}
+  \item To lowercase. The first step for the text normalization is to
+    remove differences from uppercase and lowercase letters.
+  \item Remove accented characters. Accented chars, specially in
+    italian, are often used. However for our task they are not relevant
+    and the OCR may also miss them, so we decided to exclude them from
+    the principle and to represent words with their non accented
+    versions.
+  \item Remove punctuaction. Also the punctuaction do not really
+    matters, and indeed can not say anything on the class of the bill
+    that we are considering, so we decied to remove them.
+  \item Remove numbers. Bills can be full of numbers and we can find
+    them under many forms, as, for example, dates, identifiers,
+    furniture comsumption, and manyso on. However, also numbers cannot
+    say anything about the bill class, so they were removed and replaced
+    with the keyword TODO STYLE <num>, which instead can more
+    informative as with a bag of words can represent the number of
+    numbers in a bill. For this case, we decied to not completely remove
+    the information but to keep only its condensed version.
+  \item Remove stopwords. In order to obtain the most informative
+    textual representation of a bill we had to remove also
+    insignificat words like stopwords. Stopwords are words that can be
+    used frequently in phrases, so in the context of representing the
+    bill class, an article isn't informative. Stopwords are remove
+    with the help of the \emph{Natural Language Toolkit}, available as
+    a python package: \emph{nltk}. NLTK provieds a collection of
+    stopwords, that can be easily downloaded with
+    \codeinline{nltk.download('stopwords')}, and then, with
+    \codeinline{nltk.corpus.stopwords.words('italian')} we can obrtain the
+    localized version of the stopwords and perform the removal.
+  \item Remove shortwords. By means of experiments we discovered that
+    the OCR phase, under certain (bad) conditions, returns parts of
+    words, usually very smaller. We empirically found that by removing
+    this ``shortwords'', we could improve performances.
+  \item Lemmatize. Lemmatisation (or lemmatization) in linguistics is
+    the process of grouping together the inflected forms of a word so
+    they can be analysed as a single item, identified by the word's
+    lemma, or dictionary form.\footnote{Source Wikipedia:
+      \href{https://en.wikipedia.org/wiki/Lemmatisation}{
+        https://en.wikipedia.org/wiki/Lemmatisation}}. With
+    this step, indeed, we tried to group words together in order to
+    simplify the classification phase. However, we noticed that this
+    step do not improve the performance and it can also produce worst
+    results as it tries to group wrong words retrieved from the OCR.
+  \item Tokeinze. At the end of the preprocessing we create a list of
+    words (Tokenization), that can be easily represented by in a
+    vectorized form.
+\end{enumerate}
 
 \subsection{Classification phase}
 Speak about different classification alternatives like naive bayes, svm ecc ecc reported on different  articles TODO
@@ -276,6 +339,8 @@ Parlare del confronto tra un classificatore deterministico e un algorimo di mach
 \label{sec:future-works}
 
 TODO
+
+- text preprocessing: come rimuovere la parte degli header comuni a molte fatture nel dataset?
 
 \section{Conclusion}
 \label{sec:conclusion}
