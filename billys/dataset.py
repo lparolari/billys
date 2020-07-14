@@ -5,7 +5,7 @@ Manage dataset interaction.
 import logging
 import os
 import pathlib
-from typing import List
+from typing import List, Dict
 
 import cv2
 import pandas as pd
@@ -78,7 +78,8 @@ def fetch_billys(data_home=None,
             "subset can only be 'train', 'test' or 'all', got '%s'" % subset)
 
 
-def make_dataframe_from_dataset(dataset: sklearn.utils.Bunch, force_good: bool = False, subset: str = 'train'):
+def make_dataframe_from_datasets(datasets: Dict[str, sklearn.utils.Bunch],
+                                 force_good: bool = False) -> pd.DataFrame:
     """
     Create a dataframe from the given dataset.
 
@@ -101,23 +102,23 @@ def make_dataframe_from_dataset(dataset: sklearn.utils.Bunch, force_good: bool =
          * 'is_grayscale', whether the image is in greyscale,
          * 'is_good', whether the image is good, i.e., it does not require dewarping,
          * 'is_pdf', whether the image file is in pdf format,
-         * 'subset', the dataset subset, one in 'train', 'test',
-         * 'stage', the data stage.
+         * 'subset', the dataset subset, one in 'train', 'test'.
     """
     df = pd.DataFrame(columns=['filename', 'target', 'target_name', 'is_grayscale',
-                               'is_good', 'is_pdf', 'subset', 'stage'])
+                               'is_good', 'is_pdf', 'subset', 'is_valid'])
 
-    df['stage'] = ['training' for _ in dataset.filenames]
-    df['filename'] = dataset.filenames
-    df['target'] = dataset.target
-    df['target_name'] = [dataset.target_names[target]
-                         for target in dataset.target]
-    df['is_grayscale'] = [False for _ in dataset.filenames]
-    df['is_good'] = [is_good(filename, force_good)
-                     for filename in dataset.filenames]
-    df['is_pdf'] = [is_pdf(filename) for filename in dataset.filenames]
-    df['is_valid'] = [is_valid(filename) for filename in dataset.filenames]
-    df['subset'] = [subset for _ in dataset.filenames]
+    for subset, dataset in datasets.items():
+        subset_df = pd.DataFrame(data={
+            'filename': dataset.filenames,
+            'target': dataset.target,
+            'target_name': [dataset.target_names[target] for target in dataset.target],
+            'is_grayscale': [False for _ in dataset.filenames],
+            'is_good': [is_good(filename, force_good) for filename in dataset.filenames],
+            'is_pdf': [is_pdf(filename) for filename in dataset.filenames],
+            'is_valid': [is_valid(filename) for filename in dataset.filenames],
+            'subset': [subset for _ in dataset.filenames]
+        })
+        df = df.append(subset_df, ignore_index=True)
 
     drop_invalid_values(df)
     drop_isvalid_column(df)
@@ -127,9 +128,8 @@ def make_dataframe_from_dataset(dataset: sklearn.utils.Bunch, force_good: bool =
 
 def make_dataframe_from_filenames(filenames: List[str], force_good: bool = False):
     df = pd.DataFrame(
-        columns=['filename', 'is_grayscale', 'is_pdf', 'is_good', 'stage'])
+        columns=['filename', 'is_grayscale', 'is_pdf', 'is_good'])
 
-    df['stage'] = ['classification' for _ in filenames]
     df['filename'] = filenames
     df['is_grayscale'] = [is_grayscale(filename) for filename in filenames]
     df['is_pdf'] = [is_pdf(filename) for filename in filenames]
@@ -267,18 +267,17 @@ def make_filename(row, step: str = None):
     filename
         Filename based on stage.
     """
-    stage = row['stage']
-    if stage == 'training':
+    from billys.constant import USE_DATASET_STRUCTURE
+
+    if USE_DATASET_STRUCTURE:
         return make_dataset_filename(
             filename=row['filename'],
             cat=row['target_name'],
             subset=row['subset'],
             step=step)
-    elif stage == 'classification':
+    else:
         from datetime import datetime
         now = datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S-%f')
         base_filename = os.path.basename(row['filename'])
         return os.path.join(get_data_tmp(), step, base_filename)
-    else:
-        raise ValueError(f'The stage {stage} is not supported.')
