@@ -96,4 +96,11 @@ def classify_pipeline(data_home=None,
 
     predicted = classify(df, clf)
 
+    logging.info(f'Target names: {target_names}')
+
+    for i in range(len(filenames)):
+        filename = filenames[i]
+        target_name = target_names[predicted[i]]
+        print(f'{filename} => {target_name}')
+
     return predicted
