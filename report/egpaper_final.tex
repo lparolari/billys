@@ -32,7 +32,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{Bills Classifier}
+\title{Billys: The Bills Classifier}
 
 \author{Bryan Lucchetta\\
 {\small University of Padua}\\
@@ -57,7 +57,7 @@ Luca Parolari\\
 Everyone, sooner or later, has to face the messy world of bills. Every
 month we get four/five or even more bills, coming from different
 providers and about different expenses, with the duty to keep them
-save and easily available in case of need. This task can, even if can
+safe and easily available in case of need. This task can, even if can
 be quite easy, is very boring for humans. Why don't let that a
 computer do it! The main task of our application is, indeed, to put in
 order this messy world.  In this paper we present our solution to this
@@ -73,17 +73,17 @@ steps are then combined in a pipeline which manage the whole process.
 
 The purpose of our work is to classify bills into some arbitrarily
 defined categories\footnote{a.k.a., target names or classes}, that can
-fit almost all bill category. This targets should help the used to
+fit almost all bill categories. This targets should help the user to
 better handle and organize bills for archiviation. We defined five
 classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
-  Recycling} and \emph{Telephone and Cable}. For treatability each to
-each class an integer from $0$ to $4$ is assigned, respectively. Bills
-are the very foundamental component of the whole application. A bill,
-or an invoice, is a commercial document issued by a seller to a buyer,
-relating to a sale transaction and indicating the products,
-quantities, and agreed prices for products or services the seller had
-provided the buyer. In pratical terms, for us, a bill can be a pdf
-file or an image (even a a camera taken image) to process.
+  Recycling} and \emph{Telephone and Cable}. For treatability we
+assigned to each class an integer from $0$ to $4$ is assigned,
+respectively. Bills are the very foundamental component of the whole
+application. A bill, or an invoice, is a commercial document issued by
+a seller to a buyer, relating to a sale transaction and indicating the
+products, quantities, and agreed prices for products or services the
+seller had provided the buyer. In pratical terms, for us, a bill can
+be a pdf file or an image (even a a camera taken image) to process.
 
 The task itself is very complex and can lead to a messy and
 unmantainable solution. For this reason we develop a robust and well
@@ -94,17 +94,20 @@ described below.
     processable by an optical recognition tool. In order to perfomr
     the OCR we have to preprocess the image and rotate, resize and
     strech the image.
-  \item Contrast/illumination augmentation. Also the illumination of an
-    image can be a nasty problem for an OCR tool, as it needs a clear
-    distinction written text and other stuff in order to read that.
-  \item Optical Character Recognition. This can be a very delicate
+  \item Contrast/illumination augmentation. Also the
+    illumination/contrast of an image can be a nasty problem for an
+    OCR tool, as it needs a clear distinction from written text and
+    other stuff in order to perform well.
+  \item Optical Character Recognition. The OCR can be a very delicate
     point, as the application performances depends on how the OCR
-    extracted data from images.
-  \item Text preprocessing. An hige amout of details can be extracted
+    extracts data from images.
+  \item Text preprocessing. An huge amout of details can be extracted
     from the OCR, but surely not all of them are relevant for
-    application's purposes. We have to disregard them.
-  \item Feature classification. At the end, owr need is to classify the
-    given object. This is a complex task as document data can be verydifferent and very similar at the same time.
+    application's purposes. We need to disregard them for good
+    results.
+  \item Feature classification. At the end, our need is to classify
+    the given object. This is a complex task as document data can be
+    very different and very similar at the same time.
 \end{itemize}
 
 In the following sections we present our work and we face the problems
@@ -115,12 +118,12 @@ some information about the context of the data we used. After that, in
 Section \ref{sec:proposed-method}, we show adopted solutions and
 describe smart ideas we used in order to solve the core problem. We
 then explore the pipeline and all its components in order to present
-full details of what we have done. We also show experiments and fails
-we have done before getting nice results in Section
-\ref{sec:experiments}. We conclude then with future works and possible
-enhancements that for concreteness we excluded from this presentation
-and conclusion we wrap up with some considerations about the work in
-Section \ref{sec:future-works} and \ref{sec:conclusion}.
+full details of what we have done. In Section \ref{sec:experiments},
+we also show experiments and fails we have done before getting nice
+results. We conclude then with future works and possible enhancements
+that for concreteness we excluded from this presentation and we wrap
+up with some considerations about the work in Section
+\ref{sec:future-works} and \ref{sec:conclusion}, respectively.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -247,10 +250,11 @@ in order to remove non-relevan features: pratically, it transform the
 text into a more digestible form so that machine learning algorithms
 can perform better.
 
-The implementation of this step follows logical some very simple but
-basic ideas for text preprocessing. In fact we normalize the text into
-its base form. Te inner pipeline for this phase is composed by atomic
-steps, described below. Note that for this task, the execution order of some steps really matters, so we organized them for better results. 
+The implementation of this step follows some very simple ideas for
+text preprocessing. Indeed, we just normalize the text into its base
+form. The inner pipeline for this phase is composed by atomic steps,
+described below. Note that for this task, the execution order of some
+steps really matters, so we ordered them for better performances.
 
 \begin{enumerate}
   \item To lowercase. The first step for the text normalization is to
@@ -261,15 +265,15 @@ steps, described below. Note that for this task, the execution order of some ste
     the principle and to represent words with their non accented
     versions.
   \item Remove punctuaction. Also the punctuaction do not really
-    matters, and indeed can not say anything on the class of the bill
+    matters, and indeed cannot say anything on the class of the bill
     that we are considering, so we decied to remove them.
   \item Remove numbers. Bills can be full of numbers and we can find
     them under many forms, as, for example, dates, identifiers,
-    furniture comsumption, and manyso on. However, also numbers cannot
-    say anything about the bill class, so they were removed and replaced
-    with the keyword TODO STYLE <num>, which instead can more
-    informative as with a bag of words can represent the number of
-    numbers in a bill. For this case, we decied to not completely remove
+    furniture comsumption, and so on. However, also numbers cannot say
+    anything about the bill class, so they were removed and replaced
+    with the keyword \codeinline{<num>}, which instead can be more
+    informative as in a bag of words represents the number of numbers
+    in a bill. For this case, we decied to do not completely remove
     the information but to keep only its condensed version.
   \item Remove stopwords. In order to obtain the most informative
     textual representation of a bill we had to remove also
@@ -297,18 +301,18 @@ steps, described below. Note that for this task, the execution order of some ste
     step do not improve the performance and it can also produce worst
     results as it tries to group wrong words retrieved from the OCR.
   \item Tokeinze. At the end of the preprocessing we create a list of
-    words (Tokenization), that can be easily represented by in a
+    words (Tokenization), that can be easily represented in a
     vectorized form.
 \end{enumerate}
 
 \subsection{Features Classification}
 \label{subsec:classification}
 
-The features classification is itself a core step, which is needed for
-the real bills classification. Indeed, the pipeline steps before the
-features classification can be viewed as a giant image preprocessing
-step, with the goal to preprare a nice subset of features to be used
-in the classifier.
+The features classification is itself a core step, needed for the real
+bills classification. Indeed, the pipeline steps before the features
+classification can be viewed as a giant image preprocessing step, with
+the goal to preprare a nice subset of features to be used in the
+classifier.
 
 Regardless of the chosen implementation for a classifier, textual
 features need a transformation in order to be handled: we need to
