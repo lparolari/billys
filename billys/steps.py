@@ -517,12 +517,15 @@ def ocr(df: pd.DataFrame) -> pd.DataFrame:
     df_out = df.copy()
 
     dict_list = []
+    total_rows = df.shape[0]
+    processed = 0
 
     for index, row in df.iterrows():
+        processed = processed + 1
         filename = row['filename']
         imdata = read_image(filename, is_pdf=False)
 
-        logging.debug(f'Performing ocr on image {filename}')
+        logging.debug(f'Performing ocr {processed} of {total_rows} on image {filename} ...')
 
         ocr_dict = ocr_data(imdata)
         dict_list.append(ocr_dict)
