@@ -265,6 +265,7 @@ def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
     if engine == 'cv2':
         cv2.imwrite(filename, imdata)
     elif engine == 'pil':
+        imdata = imdata.convert('RGB')  # delete the alpha channel
         imdata.save(filename, 'jpeg', dpi=dpi)
     else:
         loggin.warning(
@@ -317,4 +318,3 @@ def get_target_names(datasets: Dict[str, sklearn.utils.Bunch]):
         raise ValueError('Train and Test target differs.')
 
     return train_target_names
-

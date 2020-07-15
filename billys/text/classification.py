@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -55,3 +56,60 @@ def train(X_train, y_train, X_test, y_test, grid_search_parameters=None):
     logging.info(f'Model\'s best params: {gs_clf.best_params_}')
 
     return gs_clf
+
+
+def classify_bow(documents: List[str], max_word_diff: int = 1, unknown_cat_id: int = 5) -> List[int]:
+
+    predicted = []
+
+    for document in documents:
+
+        document = [document]
+        if document == ['']:
+            # Skip empty data, return an unknown category.
+            predicted.append(5)
+            continue
+
+        # use the scikit vectorized for creating the bag of words
+        vectorizer = CountVectorizer().fit(document)
+        bag_of_words = vectorizer.transform(document)
+
+        # create the sum of the bag of words in order to represent frequencies
+        sum_words = bag_of_words.sum(axis=0)
+
+        # get words freq
+        words_freq = [(word, sum_words[0, idx])
+                      for word, idx in vectorizer.vocabulary_.items()]
+        words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
+
+        # create words dict
+        kws_per_category = [['acqua', 'idrico', 'depurazione', 'fognatura', 'trevigiano'],
+                            ['spazzatura', 'immondizia', 'riciclato',
+                                'riciclo', 'rifiuti', 'rifiuto', 'savno'],
+                            ['gas', 'naturale'],
+                            ['luce', 'energia', 'tensione', 'potenza',
+                                'elettricita', 'elettrico', 'elettrica'],
+                            ['telefonia', 'telefonico', 'internet', 'ricaricabile', 'ricarica',
+                             'cellulare', 'navigazione', 'telecom', 'vodafone', 'tim']]
+
+        # runnng classification algorithm
+
+        best_cat = unknown_cat_id
+        max_freq = -1
+        max_word = "XXX"
+
+        for j in range(5):
+
+            kws = kws_per_category[j]
+
+            for i in range(len(kws)):
+                kw = kws[i]
+                for (w, f) in words_freq:
+                    if (w in kw and np.abs(len(w) - len(kw)) <= max_word_diff and f > max_freq):
+                        best_cat = j
+                        max_freq = f
+                        max_word = w
+
+        predicted.append(best_cat)
+
+    return predicted

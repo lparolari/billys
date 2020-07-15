@@ -574,7 +574,6 @@ def show_boxed_text(df: pd.DataFrame):
         img = cv2.resize(imdata, (500, 700))
 
         new_filename = make_filename(row, step='boxed')
-        logging.debug(f'New filename {new_filename}')
 
         save_image(new_filename, img)
 
@@ -727,112 +726,37 @@ def classify(df: pd.DataFrame, clf):
     return clf.predict(texts)
 
 
-def train_bow(df):
-    # TODO: docs
+# def train_bow(df):
+#     # TODO: docs
 
-    bag_of_words_per_category = []
+#     bag_of_words_per_category = []
 
-    for i in range(5):
-        cat = df[df['target'] == i]
+#     for i in range(5):
+#         cat = df[df['target'] == i]
 
-        data = cat['text']
+#         data = cat['text']
 
-        from sklearn.feature_extraction.text import CountVectorizer
+#         from sklearn.feature_extraction.text import CountVectorizer
 
-        # use the scikit vectorized for creating the bag of words
-        vectorizer = CountVectorizer().fit(data)
-        bag_of_words = vectorizer.transform(data)
+#         # use the scikit vectorized for creating the bag of words
+#         vectorizer = CountVectorizer().fit(data)
+#         bag_of_words = vectorizer.transform(data)
 
-        # create the sum of the bag of words in order to represent frequencies
-        sum_words = bag_of_words.sum(axis=0)
+#         # create the sum of the bag of words in order to represent frequencies
+#         sum_words = bag_of_words.sum(axis=0)
 
-        words_freq = [(word, sum_words[0, idx])
-                      for word, idx in vectorizer.vocabulary_.items()]
-        words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
+#         words_freq = [(word, sum_words[0, idx])
+#                       for word, idx in vectorizer.vocabulary_.items()]
+#         words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
 
-        # print(len(words_freq))
-        words_freq = words_freq[:(int(len(words_freq) * 0.1))]
+#         # print(len(words_freq))
+#         words_freq = words_freq[:(int(len(words_freq) * 0.1))]
 
-        # if f <= 10 and f >= 2]
-        words_freq = [(w, f) for (w, f) in words_freq if (
-            f <= 10 * len(cat) and f >= len(cat))]
-        print(words_freq)
+#         # if f <= 10 and f >= 2]
+#         words_freq = [(w, f) for (w, f) in words_freq if (
+#             f <= 10 * len(cat) and f >= len(cat))]
+#         print(words_freq)
 
-        bag_of_words_per_category.append(words_freq)
+#         bag_of_words_per_category.append(words_freq)
 
-    dump(bag_of_words_per_category, name='bag_of_words.pkl')
-
-
-def classify_bow(df):
-    from sklearn.feature_extraction.text import CountVectorizer
-
-    target_names = revert('target_names.pkl')
-    target_names.append("sconosciuto")
-
-    predicted = []
-
-    for index, row in df.iterrows():
-
-        data = [row['text']]
-        filename = row['filename']
-
-        if data == ['']:
-            predicted.append(5)
-            continue
-
-        # use the scikit vectorized for creating the bag of words
-        vectorizer = CountVectorizer().fit(data)
-        bag_of_words = vectorizer.transform(data)
-
-        # create the sum of the bag of words in order to represent frequencies
-        sum_words = bag_of_words.sum(axis=0)
-
-        words_freq = [(word, sum_words[0, idx])
-                      for word, idx in vectorizer.vocabulary_.items()]
-        words_freq = sorted(words_freq, key=lambda x: x[1], reverse=True)
-
-        # print(len(words_freq))
-        # words_freq = words_freq[:]
-        # print(words_freq)
-
-        # kws_per_category = revert('bag_of_words.pkl')
-
-        kws_per_category = [['acqua', 'idrico', 'depurazione', 'fognatura', 'trevigiano'],
-                            ['spazzatura', 'immondizia', 'riciclato',
-                                'riciclo', 'rifiuti', 'rifiuto', 'savno'],
-                            ['gas', 'naturale'],
-                            ['luce', 'energia', 'tensione', 'potenza',
-                                'elettricita', 'elettrico', 'elettrica'],
-                            ['telefonia', 'telefonico', 'internet', 'ricaricabile', 'ricarica',
-                             'cellulare', 'navigazione', 'telecom', 'vodafone', 'tim']]
-        best_cat = 5
-        max_freq = -1
-        max_word = "XXX"
-
-        import numpy as np
-
-        for j in range(5):
-
-            kws = kws_per_category[j]
-
-            for i in range(len(kws)):
-                kw = kws[i]
-                for (w, f) in words_freq:
-                    if (w in kw and np.abs(len(w) - len(kw)) <= 1 and f > max_freq):
-                        best_cat = j
-                        max_freq = f
-                        max_word = w
-
-        print(filename, best_cat, "   ", max_freq, max_word)
-        # if row['target'] == 0:
-        #     print(row['text'])
-
-        predicted.append(best_cat)
-
-    # print(predicted)
-    # print(df['target'].tolist())
-    # print(target_names)
-
-    print(metrics.classification_report(
-        df['target'].tolist(), predicted, target_names=target_names))
-    # print(metrics.confusion_matrix(df['target'], predicted))
+#     dump(bag_of_words_per_category, name='bag_of_words.pkl')
