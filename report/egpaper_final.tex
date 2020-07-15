@@ -278,8 +278,8 @@ steps, described below. Note that for this task, the execution order of some ste
   \item \textbf{Lemmatize}: lemmatisation (or lemmatization) in linguistics is
     the process of grouping together the inflected forms of a word so
     they can be analysed as a single item, identified by the word's
-    lemma, or dictionary form.\footnote{Source Wikipedia:
-      \href{https://en.wikipedia.org/wiki/Lemmatisation}{
+    lemma, or dictionary form.\footnote{\href{
+        https://en.wikipedia.org/wiki/Lemmatisation}{
         https://en.wikipedia.org/wiki/Lemmatisation}}. With
     this step, indeed, we tried to group words together in order to
     simplify the classification phase. However, we noticed that this
@@ -290,9 +290,80 @@ steps, described below. Note that for this task, the execution order of some ste
     vectorized form.
 \end{enumerate}
 
-\subsection{Classification phase}
-Speak about different classification alternatives like naive bayes, svm ecc ecc reported on different  articles TODO
+\subsection{Features Classification}
+\label{subsec:classification}
 
+The features classification is itself a core step, which is needed for
+the real bills classification. Indeed, the pipeline steps before the
+features classification can be viewed as a giant image preprocessing
+step, with the goal to preprare a nice subset of features to be used
+in the classifier.
+
+Regardless of the chosen implementation for a classifier, textual
+features need a transformation in order to be handled: we need to
+transform text into numerical feature vectors. In order to do this, we
+can use the \emph{bag of words} technique, that is based on the
+following strategy:
+
+\begin{itemize}
+  \item Assign a fixed integer id to each word occurring in any
+    document of the training set (for instance by building a
+    dictionary from words to integer indices).
+  \item For each document $i$, count the number of occurrences of each
+    word $w$ and store it in $X[i, j]$ as the value of feature $j$,
+    where $j$ is the index of word $w$ in the dictionary.
+\end{itemize}
+
+Once we have the bag of words we can analyze words occurency in order
+to extract frequencies. We cannot rely on occurrencies because longer
+documents will have higher average count values than shorter
+documents, even though they might talk about the same topics. To avoid
+these potential discrepancies it suffices to divide the number of
+occurrences of each word in a document by the total number of words in
+the document: these new features are called \emph{Term
+  Frequencies}. Another refinement on top of \emph{tf} is to downscale
+weights for words that occur in many documents in the corpus and are
+therefore less informative than those that occur only in a smaller
+portion of the corpus. This downscaling is called \emph{Term Frequency
+  times Inverse Document Frequency} (\emph{tf-idf} for brevity).
+
+Then, we are ready to train the classifier in order to predict a bill
+category. For completing this task we proposed two variants of
+classifier:
+\begin{itemize}
+  \item the Naive Bayes classifier,
+  \item the ``deterministic classifier'', based on words frequency and
+    a ground truth vocabulary.
+\end{itemize}
+
+This two methods are based on different ideas. The Naive Bayes
+classifier comes from the family of simple probabilistic classifiers
+based on applying Bayes' theorem with strong (naive) independence
+assumptions between the features. Indeed, it calculates the
+probability of a certain word to be seen in a document and it uses
+that probability in classification phase for predicting the document
+class. For our task we need the Multinomial Naive Bayes classifier, as
+we have to predict multiple classes, not only two. The deterministic
+classifier instead is based on the idea that each document category
+has a small subset of words that are very relevant for the
+classification. Indeed, we have arbitrary defined the vocabulary that
+specifies what words we expect to find in a document based on its
+category. Before manually building the vocabulary, we tried to let the
+machine builds automatically it. See the Experiment REF.
+
+The implementation of all components, except the deterministic
+classifier (which is implemented manually), are highly based on
+scikit-learn tools\footnote{In particular, we referred to the awesome
+  guide \href{
+    https://scikit-learn.org/stable/tutorial/text\_analytics/working\_with\_text\_data.html}{
+    ``Working with Text Data''} form Scikit Learn.}  Indeed, bag of
+words and counting text occurencies are implemented with the
+\codeinline{CountVectorizer} from the scikit-learn package
+\codeinline{sklearn.feature\_extraction.text}. The frequency
+extraction is implemented with \codeinline{TfidfTransformer} from the
+same package as before, while the Naive Bayes classifier is
+implemented with \codeinline{MultinomialNB} from \codeinline{from
+  sklearn.naive\_bayes} package.
 
 \section{Experiments}
 \label{sec:experiments}
