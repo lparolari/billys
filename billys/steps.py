@@ -408,7 +408,7 @@ def rotation(df: pd.DataFrame) -> pd.DataFrame:
     return df_out
 
 
-def brightness(df: pd.DataFrame, gain: float = 2.0) -> pd.DataFrame:
+def brightness(df: pd.DataFrame, gain: float = 1.5) -> pd.DataFrame:
     """
     Enhance image brightness.
 
@@ -449,7 +449,7 @@ def brightness(df: pd.DataFrame, gain: float = 2.0) -> pd.DataFrame:
     return df_out
 
 
-def contrast(df: pd.DataFrame, gain: float = 2.0) -> pd.DataFrame:
+def contrast(df: pd.DataFrame, gain: float = 1.5) -> pd.DataFrame:
     """
     Enhance image contrast.
 

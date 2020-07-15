@@ -8,6 +8,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
+import sklearn
+
 
 def train(X_train, y_train, X_test, y_test, grid_search_parameters=None):
     """
@@ -54,6 +56,11 @@ def train(X_train, y_train, X_test, y_test, grid_search_parameters=None):
 
     logging.info(f'Model\'s best score: {gs_clf.best_score_}')
     logging.info(f'Model\'s best params: {gs_clf.best_params_}')
+
+    predicted = gs_clf.predict(X_test)
+    target_names = ['acqua', 'garbage', 'gas', 'luce', 'telefono']
+
+    print(sklearn.metrics.classification_report(y_test, predicted, target_names=target_names))
 
     return gs_clf
 
