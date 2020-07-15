@@ -354,11 +354,12 @@ for a deterministic classifier instead of a probabilistic classifier.
 For further details see the experiment reported to Section
 \label{subsec:classification-naive-bayes}.
 
-The Figure REF shows an example of the vocabulary (italian version) we
-used to perform bills classification, how we can see, it is very small
-and effective.  Before manually building the vocabulary, we tried to
-let the machine builds automatically it. See the experiment reported
-in Section REF.
+The Figure \ref{table:determnistic-classifier-dict} shows an example
+of the vocabulary (italian version) we used to perform bills
+classification, how we can see, it is very small and effective.
+On the contrary, one could think to automatically generate the
+vocabulary: this could be a valid option! See the Section
+\ref{sec:future-works}.
 
 \bgroup
 \def\arraystretch{1.3}%
@@ -461,10 +462,25 @@ main dataset and the deterministic classifier.
 \section{Future Works}
 \label{sec:future-works}
 
-TODO
+The task offers a infinite list of related works that can be done in
+order to improve results and extends our ideas. We list below some of
+possible future works.
 
-- text preprocessing: come rimuovere la parte degli header comuni a molte fatture nel dataset?
-- naive bayes on vocabulary extracted text? (VEDERE SE METTERE O MENO)
+\begin{itemize}
+  \item Enhanced Text Preprocessing. Our text preprocessing is not
+    sophisticaded, instead it is composed by the necessary steps in
+    order to get a decent classifier. An enhance on text preprocessing
+    could be the header removal. Under the bills domain, headers are
+    composed of extremenly non-relevant data, that could be discarded
+    with a vocabulary of names or something similar.
+  \item Automatic Vocabulary Building. For concreteness, we manually
+    built the vocabulary used in the deterministic classifier, instead
+    one could let the machine generate it for him. In fact, our
+    approach has some drawbacks: the application tends to be static,
+    but mainly, the vocabulary can miss some relevant words. A well
+    configured vocabulary automatic building can surely perform better
+    wrt the manual one. 
+\end{itemize}
 
 \section{Conclusion}
 \label{sec:conclusion}
