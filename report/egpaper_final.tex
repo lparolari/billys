@@ -85,42 +85,10 @@ quantities, and agreed prices for products or services the seller had
 provided the buyer. In pratical terms, for us, a bill can be a pdf
 file or an image (even a a camera taken image) to process.
 
-The task itself is very complex and can lead to a messy and
-unmantainable solution. For this reason we develop a robust and well
-structured pipeline with the aim to face some of the main problems,
-described below.
-\begin{itemize}
-  \item Image dewarping. Camera taken image are usually not directly
-    processable by an optical recognition tool. In order to perfomr
-    the OCR we have to preprocess the image and rotate, resize and
-    strech the image.
-  \item Contrast/illumination augmentation. Also the illumination of an
-    image can be a nasty problem for an OCR tool, as it needs a clear
-    distinction written text and other stuff in order to read that.
-  \item Optical Character Recognition. This can be a very delicate
-    point, as the application performances depends on how the OCR
-    extracted data from images.
-  \item Text preprocessing. An hige amout of details can be extracted
-    from the OCR, but surely not all of them are relevant for
-    application's purposes. We have to disregard them.
-  \item Feature classification. At the end, owr need is to classify the
-    given object. This is a complex task as document data can be verydifferent and very similar at the same time.
-\end{itemize}
-
 In the following sections we present our work and we face the problems
-described above. We start from related works in Section
-\ref{sec:related-work}, where we discuss about our starting
-point. Then, in Section \ref{sec:dataset}, we present our dataset and
-some information about the context of the data we used. After that, in
-Section \ref{sec:proposed-method}, we show adopted solutions and
-describe smart ideas we used in order to solve the core problem. We
-then explore the pipeline and all its components in order to present
-full details of what we have done. We also show experiments and fails
-we have done before getting nice results in Section
-\ref{sec:experiments}. We conclude then with future works and possible
-enhancements that for concreteness we excluded from this presentation
-and conclusion we wrap up with some considerations about the work in
-Section \ref{sec:future-works} and \ref{sec:conclusion}.
+arised during this project.
+
+TODO: overview of your results (scritto dal prof)
 
 \section{Related Work}
 \label{sec:related-work}
@@ -142,7 +110,7 @@ Classifier, TODO set references.
 \label{sec:dataset}
 When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 3 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase, and a third dataset consisisting of bills coming from different providers, not included in the main dataset, to see if the application is able to correctly classify unseen bills.\\
 
-For the main dataset we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
+For the \textbf{main dataset} we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
 
 
 \begin{table}[!h]
@@ -159,7 +127,7 @@ For the main dataset we gather nearly all the bills that we could find in our ho
 		\end{tabular}
 	\end{center}
 	\label{dataset-table}
-	\caption{Dataset composition}
+	\caption{Main Dataset composition}
 \end{table}
 
 In the following summer it is reported all the providers considered per category:\\
@@ -185,9 +153,9 @@ In the following summer it is reported all the providers considered per category
 
 Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{fig:pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
 
-The second dataset provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
+The \textbf{second dataset} provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
 
-The third and the last dataset used consists of nearly TODO (inserire la quantita) unseen bills belonging to the same categories of the main dataset, but this time we excluded from the main dataset some providers to test after the performance of this application when we present it some new photo of bills coming from new unseen providers. We will see the obtained performance in the experiment section.
+The \textbf{third} and the last \textbf{dataset} used consists of nearly TODO (inserire la quantita) unseen bills belonging to the same categories of the main dataset, but this time we excluded from the main dataset some providers to test after the performance of this application when we present it some new photo of bills coming from new unseen providers. We will see the obtained performance in the experiment section.
 
 \begin{comment}
 #if 0
@@ -197,8 +165,29 @@ TODO: ELIMINARE VISTO CHE NON LO FACCIAMO FORSE We have noticed that the page-de
 \section{Proposed Method}
 \label{sec:proposed-method}
 
-We proprosed this pipeline for different reasons. We choose to add an Optical Carachter Recognition in our project because we thought that using a simple CNN to classify the bills could bring some problems like, what are the behaviuor of an CNN in front of a new unseen bill about another supplier. Another reason is the fact that a CNN need a lot of example to be trained and because we have only "few" exaples we prefered to try another approach. So we chose Tesseract to extrapolate all the text inside a bill and then classify the bills accordingly to all the text extracted. In this way we think that a text classification is much more stable in predicting the bill type of a new unseen example, because in an unseen new bill the words extrapoleted are in general the same as the words extracted from the bills included in the dataset. Once we have chosen to include an OCR all the rest of the pipeline is built upon the major drawback already known for OCRs, like image preprocesing (Page dewarping and Brightness \& Contrast Enhancer). Obtained all the text from the bills we need to preproccess also the extrapoleted text before the final step. This part is important for excluding the frequent words like articles and 
-verbs often used wich are not important for the final classification. TODO: aggiungere se serve su questa parte. In the following we dive into the details of the designed pipeline that could be summarized by figure \ref{fig:pipeline}.
+The task itself is very complex and can lead to a messy and
+unmantainable solution. For this reason we develop a robust and well
+structured pipeline with the aim to face some of the main problems,
+described below.
+\begin{itemize}
+	\item Image dewarping. Camera taken image are usually not directly
+	processable by an optical recognition tool. In order to perfomr
+	the OCR we have to preprocess the image and rotate, resize and
+	strech the image.
+	\item Contrast/illumination augmentation. Also the illumination of an
+	image can be a nasty problem for an OCR tool, as it needs a clear
+	distinction written text and other stuff in order to read that.
+	\item Optical Character Recognition. This can be a very delicate
+	point, as the application performances depends on how the OCR
+	extracted data from images.
+	\item Text preprocessing. An hige amout of details can be extracted
+	from the OCR, but surely not all of them are relevant for
+	application's purposes. We have to disregard them.
+	\item Feature classification. At the end, owr need is to classify the
+	given object. This is a complex task as document data can be verydifferent and very similar at the same time.
+\end{itemize}
+
+To resolve all this problem we prososed the pipeline reported in figure \ref{fig:pipeline}. We choose to add an Optical Carachter Recognition in our project because we thought that using a simple CNN to classify the bills could bring some problems like, what are the behaviuor of an CNN in front of a new unseen bill about another supplier. Another reason is the fact that a CNN need a lot of examples (huge dataset) to be trained and because we have only "few" exaples we prefered to try another approach. So we chose Tesseract to extrapolate all the text inside a bill and then classify the bill accordingly to all the text extracted. In this way we think that a text classificator is much more stable in predicting the bill's type of a new unseen example, because in an unseen new bill the words extrapoleted are in general the same as the words extracted from the bills included in the main dataset. Once we have chosen to include an OCR all the rest of the pipeline is built upon the major drawback already known for OCRs, like image preprocesing (Page dewarping and Brightness \& Contrast Enhancer). Obtained all the text from the bills we need to preproccess also the extrapoleted text before the final step. This part is important for excluding the frequent words like articles and verbs often used wich are not important for the final classification. In what following we will dive into the details of the designed pipeline.
 
 \begin{figure*}[h]
   \centering
@@ -208,7 +197,7 @@ verbs often used wich are not important for the final classification. TODO: aggi
 \end{figure*}
 
 \subsection{Image pre-processing phase}
-The image preprocessing phase is in charge of adjusting all the aspect of a mobile camera taken photos. This includes brightness and contrast adjustments, dewarping, skew correction and others. The first task of our pipeline infact is try to recover a flatbed scanned document from a camera taken photos. For this task we used the work done in \cite{mobile-ocr} wich uses an Xcenption Neural Network \cite{xception_NN} to perform this task, with appreciable results according to the article. In figure \ref{xception-architecture} is reported the Xception architecture used in this application coming from the work done in \cite{Improvingcamera-based}. We have seen that in some experiment, that involve the third dataset which consists of mobile camera taken in extreme conditions, the network doesn't correctly adjust the homography of the document. The last step of the image pre-processing is the correction of the brightness and constrast of the image. This is done because there are critical photos that could arise many problem for the OCR phase and this problems are be better exaplined in the Experiment section.
+The image preprocessing phase is in charge of adjusting all the aspect of a mobile camera taken photos. This includes brightness and contrast adjustments, dewarping, skew correction and others. The first task of our pipeline infact is try to recover a flatbed scanned document from a camera taken photos. For this task we used the work done in \cite{mobile-ocr} wich uses an Xcenption Neural Network \cite{xception_NN} to perform this task, with appreciable results according to the article. In figure \ref{xception-architecture} is reported the Xception architecture used in this application coming from the work done in \cite{Improvingcamera-based}. We have observed that in some experiment, that involve the second dataset which consists of mobile camera taken photos of bills in extreme conditions, the network doesn't correctly adjust the homography of some document contained in the dataset. The last step of the image pre-processing is the correction of the brightness and constrast of the image. This is done because there are critical photos that could arise many problem for the OCR phase and this problems are be better exaplined in the Experiment section.
 
 \subsubsection{The Xception Neural Network}
 The dewarping phase is completly based on the work done in \cite{mobile-ocr}. Accordingly to the autor, the recovery of the homography of a mobile camera taken photos of a document is delegated to a Xception Neural Network. According to the paper \cite{xception} this architecture relies heavily on prior efforts in the Inception architecture wich first demonstrated the advantages of factoring the convolutions into multiple branches operating successively on channels and then on space. It is entirely based upon the Residual Connections and Depthwise separable convolutions. For the Depthwise separable convolutions advantages we refer to the article \cite{https://towardsdatascience.com/a-basic-introduction-to-separable-convolutions-b99ec3102728} and for Residual Connections we refer to \cite{https://towardsdatascience.com/residual-blocks-building-blocks-of-resnet-fd90ca15d6ec}.
@@ -253,17 +242,17 @@ its base form. Te inner pipeline for this phase is composed by atomic
 steps, described below. Note that for this task, the execution order of some steps really matters, so we organized them for better results. 
 
 \begin{enumerate}
-  \item To lowercase. The first step for the text normalization is to
+  \item \textbf{To lowercase}: the first step for the text normalization is to
     remove differences from uppercase and lowercase letters.
-  \item Remove accented characters. Accented chars, specially in
+  \item \textbf{Remove accented characters}: accented chars, specially in
     italian, are often used. However for our task they are not relevant
     and the OCR may also miss them, so we decided to exclude them from
     the principle and to represent words with their non accented
     versions.
-  \item Remove punctuaction. Also the punctuaction do not really
+  \item \textbf{Remove punctuaction}: also the punctuaction do not really
     matters, and indeed can not say anything on the class of the bill
     that we are considering, so we decied to remove them.
-  \item Remove numbers. Bills can be full of numbers and we can find
+  \item \textbf{Remove numbers}: bills can be full of numbers and we can find
     them under many forms, as, for example, dates, identifiers,
     furniture comsumption, and manyso on. However, also numbers cannot
     say anything about the bill class, so they were removed and replaced
@@ -271,7 +260,7 @@ steps, described below. Note that for this task, the execution order of some ste
     informative as with a bag of words can represent the number of
     numbers in a bill. For this case, we decied to not completely remove
     the information but to keep only its condensed version.
-  \item Remove stopwords. In order to obtain the most informative
+  \item \textbf{Remove stopwords}: in order to obtain the most informative
     textual representation of a bill we had to remove also
     insignificat words like stopwords. Stopwords are words that can be
     used frequently in phrases, so in the context of representing the
@@ -282,11 +271,11 @@ steps, described below. Note that for this task, the execution order of some ste
     \codeinline{nltk.download('stopwords')}, and then, with
     \codeinline{nltk.corpus.stopwords.words('italian')} we can obrtain the
     localized version of the stopwords and perform the removal.
-  \item Remove shortwords. By means of experiments we discovered that
+  \item \textbf{Remove shortwords}: By means of experiments we discovered that
     the OCR phase, under certain (bad) conditions, returns parts of
     words, usually very smaller. We empirically found that by removing
     this ``shortwords'', we could improve performances.
-  \item Lemmatize. Lemmatisation (or lemmatization) in linguistics is
+  \item \textbf{Lemmatize}: lemmatisation (or lemmatization) in linguistics is
     the process of grouping together the inflected forms of a word so
     they can be analysed as a single item, identified by the word's
     lemma, or dictionary form.\footnote{Source Wikipedia:
@@ -296,7 +285,7 @@ steps, described below. Note that for this task, the execution order of some ste
     simplify the classification phase. However, we noticed that this
     step do not improve the performance and it can also produce worst
     results as it tries to group wrong words retrieved from the OCR.
-  \item Tokeinze. At the end of the preprocessing we create a list of
+  \item \textbf{Tokeinze}: at the end of the preprocessing we create a list of
     words (Tokenization), that can be easily represented by in a
     vectorized form.
 \end{enumerate}
@@ -318,6 +307,8 @@ As already widely discussed in the articles \cite{Improvingcamera-based} and \ci
 	\label{dewarping-experiment}
 \end{figure}
 
+Moreover we tried to do the classification of the photos contained in the second dataset, which is made of bills photos with perspective distorsion and a lot of background, with Naive Bayes Classificator trained on the main dataset and without dewarping the photos. In this case we obtained an accuracy of 0.64 instead of 0.95 obtained with the same dataset but with the dewarping phase also enabled in this last case. This experiment confirm that the dewarping phase is an important task when dealing with OCR application and it can improve the perfomance in terms of accuracy of nearly 30\%.
+
 
 \subsection{Camera taken illuminance quality}
 We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the contrast and the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase contrast and brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness and Constrast Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same.
@@ -329,23 +320,31 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 	\label{bright-constrast-experiment}
 \end{figure}
 
-
-\subsection{Data augmentation}
-
 \subsection{Machine Learning or Traditional Algorithms?}
 Parlare del confronto tra un classificatore deterministico e un algorimo di machine learning, interessante sarebbec capire chi ha un accuratezza più alta. Confrontare anche con il numero di esempi richiesti.
 
-\section{Future Works}
-\label{sec:future-works}
-
-TODO
-
-- text preprocessing: come rimuovere la parte degli header comuni a molte fatture nel dataset?
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-TODO
+TODO: summarize your key results; what have you
+learned? Suggest ideas for future extensions
+
+- text preprocessing: come rimuovere la parte degli header comuni a molte fatture nel dataset?
+
+To recap what was done in this project we start from related works in Section
+\ref{sec:related-work}, where we discuss about our starting
+point. Then, in Section \ref{sec:dataset}, we present our dataset and
+some information about the context of the data we used. After that, in
+Section \ref{sec:proposed-method}, we show adopted solutions and
+describe smart ideas we used in order to solve the core problem. We
+then explore the pipeline and all its components in order to present
+full details of what we have done. We also show experiments and fails
+we have done before getting nice results in Section
+\ref{sec:experiments}. We conclude then with future works and possible
+enhancements that for concreteness we excluded from this presentation
+and conclusion we wrap up with some considerations about the work in
+Section \ref{sec:future-works} and \ref{sec:conclusion}.
 
 {\small
 \bibliographystyle{ieee_fullname}
