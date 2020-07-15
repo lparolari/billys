@@ -342,43 +342,42 @@ therefore less informative than those that occur only in a smaller
 portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
-Then, we are ready to train the classifier in order to predict a bill
-category. For completing this task we proposed two variants of
-classifier:
-\begin{itemize}
-  \item the Naive Bayes classifier,
-  \item the ``deterministic classifier'', based on words frequency and
-    a ground truth vocabulary.
-\end{itemize}
+Now, we are ready to train the classifier in order to predict a bill
+category. For completing this task we proposed a ``deterministic''
+classifier, that relies on words frequency and a ground truth
+vocabulary. This classifier is based on the simple idea that each
+document category has a small subset of words that are very relevant
+for the classification. Indeed, we have arbitrary defined the
+vocabulary that specifies what words we expect to find in a document
+based on its category. This is the main reason that led us to chose
+for a deterministic classifier instead of a probabilistic classifier.
+For further details see the experiment reported to Section
+\label{subsec:classification-naive-bayes}.
 
-This two methods are based on different ideas. The Naive Bayes
-classifier comes from the family of simple probabilistic classifiers
-based on applying Bayes' theorem with strong (naive) independence
-assumptions between the features. Indeed, it calculates the
-probability of a certain word to be seen in a document and it uses
-that probability in classification phase for predicting the document
-class. For our task we need the Multinomial Naive Bayes classifier, as
-we have to predict multiple classes, not only two. The deterministic
-classifier instead is based on the idea that each document category
-has a small subset of words that are very relevant for the
-classification. Indeed, we have arbitrary defined the vocabulary that
-specifies what words we expect to find in a document based on its
-category. Before manually building the vocabulary, we tried to let the
-machine builds automatically it. See the Experiment REF.
+The Figure REF shows an example of the vocabulary (italian version) we
+used to perform bills classification, how we can see, it is very small
+and effective.  Before manually building the vocabulary, we tried to
+let the machine builds automatically it. See the experiment reported
+in Section REF.
 
-The implementation of all components, except the deterministic
-classifier (which is implemented manually), are highly based on
-scikit-learn tools\footnote{In particular, we referred to the awesome
-  guide \href{
-    https://scikit-learn.org/stable/tutorial/text\_analytics/working\_with\_text\_data.html}{
-    ``Working with Text Data''} form Scikit Learn.}  Indeed, bag of
-words and counting text occurencies are implemented with the
-\codeinline{CountVectorizer} from the scikit-learn package
-\codeinline{sklearn.feature\_extraction.text}. The frequency
-extraction is implemented with \codeinline{TfidfTransformer} from the
-same package as before, while the Naive Bayes classifier is
-implemented with \codeinline{MultinomialNB} from \codeinline{from
-  sklearn.naive\_bayes} package.
+\bgroup
+\def\arraystretch{1.3}%
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{p{2cm} p{5cm}}
+      \hline
+      Class & Keywords \\ \hline
+      Water & acqua, idrico, depurazione, fognatura \\
+      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto \\
+      Gas & gas, naturale \\
+      Electricity & luce, energia, tensione, potenza, elettricita, elettrico, elettrica \\
+      Telephone and Cable & telefonia, telefonico, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim \\ \hline
+    \end{tabular}
+  \end{center}
+  \label{table:determnistic-classifier-dict}
+  \caption{Example of one vocabulary for the deterministic classifier.}
+\end{table}
+\egroup
 
 \section{Experiments}
 \label{sec:experiments}
@@ -407,8 +406,57 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 
 \subsection{Data augmentation}
 
-\subsection{Machine Learning or Traditional Algorithms?}
-Parlare del confronto tra un classificatore deterministico e un algorimo di machine learning, interessante sarebbec capire chi ha un accuratezza più alta. Confrontare anche con il numero di esempi richiesti.
+TODO
+
+\subsection{Classification with Naive Bayes}
+\label{subsec:classification-naive-bayes}
+
+The classification strategy proposed in Section in
+\ref{subsec:classification} is not the only feasible way. There are
+many machine learning algorithms applicable over text classification:
+one over the other is Naive Bayes.
+
+The Naive Bayes classifier, unlike the deterministic classifier, comes
+from the family of simple probabilistic classifiers based on applying
+Bayes' theorem with strong (naive) independence assumptions between
+the features. Indeed, it calculates the probability of a certain word
+to be seen in a document and it uses that probability in
+classification phase for predicting the document class. For our task
+we need the Multinomial Naive Bayes classifier, as we have to predict
+multiple classes, not only two.
+
+However, due to the definition of our problem, this type of classifier
+is probabily an overkill: it bases the predicted target on all the
+text provided to the classifier. Under our domain, documents are very
+likely to be similar for most of their parts and we have only few
+interesting words for each document that differs. Also, bills contains
+huge amount of non-relevant data for our application like marketing
+banners, disclaimers, formal opening of letters, and so on. Another
+problem we had, as described in Section \ref{sec:dataset}, is the
+problem of the headers: we can have two bills about different
+categories with same header (same user data), or bills about same
+category with different headers (different user data). This kind of
+problem cannot be easily handled with such a classifier, so at the end
+we decided to chose the deterministic classifier.
+
+The Table \ref{table:classifiers-comparison} shows a comparison
+between the the performance on an unseen dataset (described in Section
+\ref{sec:dataset}), for the Naive Bayes classifier, trained on our
+main dataset and the deterministic classifier.
+
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{lll}
+      \hline
+      Classifier & Accuracy & Support \\ \hline
+      Naive Bayes & $0.65$ & $26$ \\
+      Deterministic & $0.88$ & $26$ \\ \hline
+    \end{tabular}
+  \end{center}
+  \label{table:classifiers-comparison}
+  \caption{Accuracy comparison between Naive Bayes classifier and
+    deterministic calssifier on unseen data.}
+\end{table}
 
 \section{Future Works}
 \label{sec:future-works}
@@ -416,6 +464,7 @@ Parlare del confronto tra un classificatore deterministico e un algorimo di mach
 TODO
 
 - text preprocessing: come rimuovere la parte degli header comuni a molte fatture nel dataset?
+- naive bayes on vocabulary extracted text? (VEDERE SE METTERE O MENO)
 
 \section{Conclusion}
 \label{sec:conclusion}
