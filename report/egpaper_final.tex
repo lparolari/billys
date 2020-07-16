@@ -495,12 +495,14 @@ discovered that the two perform quite the same. However, we must
 underline that this third dataset was composed by very very few data,
 so the results are not reliable.
 
-\subsection{Results}
+\paragraph{Results}
 
 The Table \ref{table:classifiers-comparison} shows a comparison
-between the the performance on the main dataset, second and the third dataset (described in Section
-\ref{sec:dataset}), for the Naive Bayes classifier, trained on our
-main dataset and the deterministic classifier. In the second dateset, we enabled and disabled the dewarphing phase to see the difference in performance with this task.
+between the performance of the main and the warped dataset (described
+in Section \ref{sec:dataset}), for the Naive Bayes classifier trained
+on our main dataset and the deterministic classifier. In the second
+dateset, we enabled and disabled the dewarphing phase to see the
+difference in performance with this task.
 
 \begin{table}[!h]
   \begin{center}
@@ -520,15 +522,11 @@ main dataset and the deterministic classifier. In the second dateset, we enabled
       \small With dewarping phase \\
       \; \; Naive Bayes & $0.98$ & $129$ \\
       \; \; Deterministic & $0.88$ & $129$ \\ \hline
-      
-      \textbf{Third Dataset} & & \\
-      \; \; Naive Bayes & $0.8$ & $20$ \\
-      \; \; Deterministic & $0.95$ & $20$ \\ \hline
     \end{tabular}
   \end{center}
   \label{table:classifiers-comparison}
   \caption{Accuracy comparison between Naive Bayes classifier and
-    deterministic calssifier on unseen data.}
+    deterministic calssifier.}
 \end{table}
 
 \section{Future Works}
