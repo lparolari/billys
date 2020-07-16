@@ -1,12 +1,13 @@
-import cv2
 import logging
 import os
 import os.path
 import time
 from decimal import ROUND_HALF_UP, Decimal
-from pickle import load, dump
-from typing import Any, Optional
+from pickle import dump, load
+from typing import Any, Dict, List, Optional
 
+import cv2
+import sklearn
 from pdf2image import convert_from_path
 
 BILLYS_WORKSPACE_NAME = '.billys'
@@ -154,6 +155,11 @@ def read_dump(filename: str) -> Optional[Any]:
     """
     Read a dump file and return the python object.
 
+    Parameters
+    ----------
+    filename
+        The filename of the dump to read.
+
     Returns
     -------
     object
@@ -171,6 +177,13 @@ def read_dump(filename: str) -> Optional[Any]:
 def save_dump(obj: Any, filename: str) -> None:
     """
     Save a dump file with content `obj` to file `filename`.
+
+    Parametrs
+    ---------
+    obj
+        The object to dump.
+    filename
+        The filename of the dump.
     """
     try:
         with open(filename, 'wb') as f:
@@ -188,8 +201,14 @@ def read_image(filename: str, is_pdf: bool = False, engine: str = 'cv2'):
     Parameters
     ----------
     filename
+        The image filename.
+
     is_pdf
-    engine: cv2 or pil
+        Whether the image to read is a pdf or not.
+
+    engine
+        The engine to use in order to read the image.
+        Can be one of 'cv2' or 'pil'.
 
     Returns
     -------
@@ -246,7 +265,56 @@ def save_image(filename, imdata, engine: str = 'cv2', dpi=None):
     if engine == 'cv2':
         cv2.imwrite(filename, imdata)
     elif engine == 'pil':
+        imdata = imdata.convert('RGB')  # delete the alpha channel
         imdata.save(filename, 'jpeg', dpi=dpi)
     else:
         loggin.warning(
             f'Supported engines are `cv2` or `pil`, you gived {engine}. Skipping.')
+
+
+def sort(xs: List[Any]) -> List[Any]:
+    """
+    Sort the list `xs` with the python `sort` function 
+    and return the sorted function. The given list is not modified.
+
+    Parameters
+    ----------
+    xs
+        A list.
+
+    Returns
+    -------
+    xs_sorted
+        A sorted copy of `xs`.
+    """
+    xs_copy = xs.copy()
+    xs_copy.sort()
+    return xs_copy
+
+
+def get_target_names(datasets: Dict[str, sklearn.utils.Bunch]):
+    """
+    Get target names from train and test dataset.
+
+    Parameters
+    ----------
+    datasets
+        A dict with train and test dataset.
+
+    Returns
+    -------
+    target_names
+        The target names in datasets. Target names must be the
+        same between the two datasets.
+
+    Raises
+    ------
+    ValueError, if target names differs.
+    """
+    train_target_names = datasets['train'].target_names
+    test_target_names = datasets['test'].target_names
+
+    if train_target_names != test_target_names:
+        raise ValueError('Train and Test target differs.')
+
+    return train_target_names

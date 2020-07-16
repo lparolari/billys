@@ -8,6 +8,7 @@ catalogue==1.0.0
 certifi==2020.6.20
 chardet==3.0.4
 click==7.1.2
+cycler==0.10.0
 cymem==2.0.3
 deepmerge==0.1.0
 gast==0.3.3
@@ -22,8 +23,10 @@ isort==4.3.21
 it-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/it_core_news_sm-2.3.0/it_core_news_sm-2.3.0.tar.gz
 joblib==0.16.0
 Keras-Preprocessing==1.1.2
+kiwisolver==1.2.0
 lazy-object-proxy==1.4.3
 Markdown==3.2.2
+matplotlib==3.2.2
 mccabe==0.6.1
 murmurhash==1.0.2
 nltk==3.5
@@ -43,6 +46,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycodestyle==2.6.0
 pylint==2.5.3
+pyparsing==2.4.7
 pytesseract==0.3.4
 python-dateutil==2.8.1
 pytz==2020.1

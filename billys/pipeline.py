@@ -8,318 +8,296 @@ compromise the saving and loading functions for checkpoints.
 
 import logging
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 import cv2
+import deepmerge
 import pandas as pd
 import piexif
+import sklearn
 from PIL import Image, ImageEnhance, ImageOps
-import deepmerge
 
-from billys.steps import dump, revert, show, skip
-from billys.steps import build, fetch
-from billys.steps import brightness, contrast, dewarp, rotation
-from billys.steps import ocr, show_boxed_text
-from billys.steps import extract_text, preprocess_text
-from billys.steps import train_classifier
-from billys.util import get_elapsed_time, now, get_data_home, identity
+import billys.constant as billys_const
+from billys.steps import (brightness, build_dataframe, classify, contrast,
+                          convert_to_images, dewarp, dump, extract_text,
+                          fetch_dataset, fetch_filenames, log, ocr,
+                          preprocess_text, revert, rotation, show_boxed_text,
+                          skip, train_classifier)
+from billys.util import (get_data_home, get_elapsed_time, get_target_names,
+                         identity, now)
+
+# TODO: add step management in pipelines.
+# TODO: add config management in pipelines.
 
 
-def merge_config(c1, c2):
+def train_naive_bayes(
+    dataset_name,
+    data_home=None,
+    force_good=True,
+    homography_model_path=os.path.join(
+        os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+    steps=['convert_to_images', 'dewarp', 'rotation', 'brightness', 'contrast',
+           'ocr', 'show_boxed_text', 'extract_text', 'preprocess_text']):
     """
-    Merge configs `c1` and `c2` with :func:`deepmerge.always_merger.merge`
-    and return the merged configuration.
-
-    Returns
-    -------
-    config
-        Merged configuration
-    """
-    return deepmerge.always_merger.merge(c1, c2)
-
-
-class PresetConfig:
-    """
-    Class for preset steps and config.
+    Perform the training of a Naive Bayes classifier from dataset
+    and return the trained classifier.
     """
 
-    AVAILABLE_STAGES = [
-        'preprocess_train_dataset',
-        'preprocess_test_dataset',
-        'do_train',
-    ]
+    billys_const.USE_DATASET_STRUCTURE = True
 
-    PRECOMPILED_STEPS = {
-        'preprocess_train_dataset': [
-            'fetch-billys',
-            'init-dataframe',
-            'dewarp',
-            'rotation',
-            'brightness',
-            'contrast',
-            'ocr',
-            'show-boxed-text',
-            'extract-text',
-            'preprocess-text',
-            'save-dump',
-        ],
-        'preprocess_test_dataset': [
-            'fetch-billys',
-            'init-dataframe',
-            'dewarp',
-            'rotation',
-            'brightness',
-            'contrast',
-            'ocr',
-            'show-boxed-text',
-            'extract-text',
-            'preprocess-text',
-            'save-dump',
-        ],
-        'do_train': ['fetch-train-test-dump', 'train-classifier', 'save-dump']
-    }
+    logging.debug(
+        f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
 
-    PRECOMPILED_CONFIG = {
-        'preprocess_train_dataset':  {
-            'save-dump': {
-                'name': f'train_df.pkl'
-            }
-        },
-        'preprocess_test_dataset': {
-            'save-dump': {
-                'name': f'test_df.pkl'
-            }
-        },
-        'do_train': {
-            'fetch-train-test-dump': {
-                'train': {
-                    'name': 'train_df.pkl'
-                },
-                'test': {
-                    'name': 'test_df.pkl'
-                }
-            },
-            'save-dump': {
-                'name': 'trained_classifier.pkl'
-            }
-        },
-    }
+    datasets = fetch_dataset(name=dataset_name, data_home=data_home)
+    target_names = get_target_names(datasets)
 
-    def __init__(self, stage: str):
-        if stage not in self.AVAILABLE_STAGES:
-            raise ValueError(
-                f'The stage {stage} is not valid, it should be one of {self.AVAILABLE_STAGES}')
-        self.stage = stage
+    df = build_dataframe(
+        datasets, input_type='datasets', force_good=force_good)
 
-    def get_steps(self):
-        return self.PRECOMPILED_STEPS[self.stage]
+    # Performing pipeline
+    if 'convert_to_images' in steps:
+        df = convert_to_images(df)
+    if 'dewarp' in steps:
+        df = dewarp(df, homography_model_path=homography_model_path)
+    if 'rotation' in steps:
+        df = rotation(df)
+    if 'brightness' in steps:
+        df = brightness(df)
+    if 'contrast' in steps:
+        df = contrast(df)
+    if 'ocr' in steps:
+        df = ocr(df)
+    if 'show_boxed_text' in steps:
+        df = show_boxed_text(df)
+    if 'extract_text' in steps:
+        df = extract_text(df)
+    if 'preprocess_text' in steps:
+        df = preprocess_text(df)
 
-    def get_config(self, custom={}):
-        return merge_config(self.PRECOMPILED_CONFIG[self.stage], custom)
+    # TODO: remove this in future...
+    dump(df, name='preprocessed_dataset.pkl')
+
+    clf = train_classifier(df)
+
+    return clf
 
 
-def get_steps(steps=(PresetConfig(stage='preprocess_train_dataset').get_steps())):
+def classify_from_filenames(
+    filenames,
+    classifier,
+    target_names,
+    data_home=None,
+    force_good=True,
+    homography_model_path=os.path.join(
+        os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+    steps=['convert_to_images', 'dewarp', 'rotation', 'brightness', 'contrast',
+           'ocr', 'show_boxed_text', 'extract_text', 'preprocess_text']):
     """
-    Get pipeline steps.
-
-    Parameters
-    ----------
-    steps
-        A list of steps. By default steps for 'preprocess_train_dataset' build with 
-        `PresetConfig` are returned.
-
-    Returns
-    -------
-    steps
-        Given steps or a default preset.
-    """
-    # TODO: check steps validity
-    return steps
-
-
-def get_config(custom=(PresetConfig(stage='preprocess_train_dataset').get_config())):
-    """
-    Get the configuration for pipeline steps.
-
-    Parameters
-    ----------
-    config
-        A dict, with the following structure
-        ```
-        {
-            'step-1': {
-                'param-1-1': 'value-1-1',
-                'param-1-2': 'value-1-2',
-                ...
-            }
-            'step-2': {
-                'param-2-1': 'value-2-1',
-                'param-2-2': 'value-2-2',
-                ...
-            }
-            ...
-        }
-        ```
-
-        Notation: For simplicity dict keys will be flattened.
-
-        Available configurations:
-
-        fetch-billys: dict, default={}
-            Configuration for fetch-billys step.
-            Available parameters are
-             * data_home:                               str, optional
-             * name:                                    str, optional
-             * subset:                                  str, optional
-
-        fetch-dump: dict, default={}
-            Configuration for fetch-dump step.
-            Available parameters
-            * data_home:                                str, optional
-            * name:                                     str, required
-
-        save-dump: dict, default={}
-            Configuration for fetch-dump step.
-            Available parameters
-            * data_home:                                str, optional
-            * name:                                     str, required
-
-        init-dataframe: dict, default={}
-            Configuration for init-dataframe step.
-            Available parameters
-            * force_good:                              bool, optional
-            * subset:                                   str, optional
-
-        dewarp: dict, default={}
-            Configuration for dewarp step.
-            Available parameters
-            * homography_model_path:                    str, optional
-
-        fetch-train-test-dump: dict, default={}
-            Configuration for train and test dump to load.
-            Available parameters
-            * train.name                                str, required
-            * test.name                                 str, required
-
-        Please for further details refer to steps functions documentation.
-
-        Example:
-        ```
-        {
-            'fetch-billys': {
-                'data_home': get_data_home('/path/to/datahome/foo'),
-                'name': 'my-dataset',
-                'subset': 'test',
-            },
-            'fetch-dump': {
-                'name': 'my-dump.pkl',
-            },
-            'init-dataframe': {},
-            'dewarp': {
-                'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
-            }
-        }
-        ```
-
-        Note that you can overwrite only required keys and steps.
-        If keys or steps are omitted the will assume default values
-
-    Returns
-    -------
-    config
-        The given configuration dict merged with defaults or a default preset.
-        Given configurations overwrite defaults.
+    Perform data classification with classifier `classifier` from
+    given filenames, without verifying targets. No metrics shown.
     """
 
-    # Default configs
-    default = {
-        'fetch-billys': {},
-        'fetch-dump': {},
-        'save-dump': {},
-        'init-dataframe': {},
-        'dewarp': {
-            'homography_model_path': os.path.join(os.getcwd(), 'resource', 'model', 'xception_10000.h5')
-        },
-        'fetch-train-test-dump': {
-            'train': {},
-            'test': {}
-        }
-    }
+    billys_const.USE_DATASET_STRUCTURE = False
 
-    # Merge given config with defaults.
-    return deepmerge.always_merger.merge(default, custom)
+    logging.debug(
+        f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
+
+    filenames = fetch_filenames(filenames, data_home=data_home)
+
+    df = build_dataframe(
+        filenames, input_type='filenames', force_good=force_good)
+
+    # Performing pipeline
+    if 'convert_to_images' in steps:
+        df = convert_to_images(df)
+    if 'dewarp' in steps:
+        df = dewarp(df, homography_model_path=homography_model_path)
+    if 'rotation' in steps:
+        df = rotation(df)
+    if 'brightness' in steps:
+        df = brightness(df)
+    if 'contrast' in steps:
+        df = contrast(df)
+    if 'ocr' in steps:
+        df = ocr(df)
+    if 'show_boxed_text' in steps:
+        df = show_boxed_text(df)
+    if 'extract_text' in steps:
+        df = extract_text(df)
+    if 'preprocess_text' in steps:
+        df = preprocess_text(df)
+
+    # Performing prediction
+    predicted = classify(df, classifier)
+
+    logging.info(f'Target names: {target_names}')
+
+    # Showing perdicted
+    for i in range(len(filenames)):
+        filename = filenames[i]
+        target = predicted[i]
+        target_name = target_names[target]
+
+        print(f'{filename} => {target_name}')
+
+    return predicted
 
 
-def make_steps(step_list: List[str] = get_steps(), config=get_config()):
+def classify_from_dataset(
+    dataset_name,
+    classifier,
+    target_names,
+    data_home=None,
+    force_good=True,
+    homography_model_path=os.path.join(
+        os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+    steps=['convert_to_images', 'dewarp', 'rotation', 'brightness', 'contrast',
+           'ocr', 'show_boxed_text', 'extract_text', 'preprocess_text']):
     """
-    Build a list of pairs where the first component is the step name, while the
-    second component is the function to run for that step.
-
-    Returns
-    -------
-    to_do_steps
-        A list of step.
+    Perform data classification with classifier `classifier` from given
+    dataset. Perform also test phase and show metrics.
     """
+    billys_const.USE_DATASET_STRUCTURE = True
 
-    logging.debug(f'Building steps {step_list} with config {config}')
+    logging.debug(
+        f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
 
-    available_steps = {
-        'fetch-billys': lambda *_: fetch(**config.get('fetch-billys')),
-        'fetch-dump': lambda *_: revert(**config.get('fetch-dump')),
-        'fetch-train-test-dump': lambda *_: tuple([revert(**config.get('fetch-train-test-dump').get('train')), revert(**config.get('fetch-train-test-dump').get('test'))]),
-        'save-dump': lambda *x: dump(*x, **config.get('save-dump')),
-        'init-dataframe': lambda *x: build(*x, **config.get('init-dataframe')),
-        'print': lambda *x: show(*x),
-        'dewarp': lambda *x: dewarp(*x, **config.get('dewarp')),
-        'rotation': rotation,
-        'brightness': brightness,
-        'contrast': contrast,
-        'ocr': ocr,
-        'show-boxed-text': show_boxed_text,
-        'extract-text': extract_text,
-        'preprocess-text': preprocess_text,
-        'train-classifier': train_classifier,
-    }
+    datasets = fetch_dataset(dataset_name, data_home=data_home)
 
-    to_do_steps = []
+    df = build_dataframe(
+        datasets, input_type='datasets', force_good=force_good)
 
-    for step in (step_list):
-        func = available_steps.get(step)
-        if func is not None:
-            to_do_steps.append(tuple((step, func)))
-        else:
-            logging.warning(f'Unrecognized step {step}, skipping.')
+    # Performing pipeline
+    if 'convert_to_images' in steps:
+        df = convert_to_images(df)
+    if 'dewarp' in steps:
+        df = dewarp(df, homography_model_path=homography_model_path)
+    if 'rotation' in steps:
+        df = rotation(df)
+    if 'brightness' in steps:
+        df = brightness(df)
+    if 'contrast' in steps:
+        df = contrast(df)
+    if 'ocr' in steps:
+        df = ocr(df)
+    if 'show_boxed_text' in steps:
+        df = show_boxed_text(df)
+    if 'extract_text' in steps:
+        df = extract_text(df)
+    if 'preprocess_text' in steps:
+        df = preprocess_text(df)
 
-    return to_do_steps
+    # Performing prediction
+    predicted = classify(df, classifier)
+
+    logging.info(f'Target names: {target_names}')
+
+    filenames = df['filename'].tolist()
+
+    # Print predicted values.
+    for i in range(len(filenames)):
+        filename = filenames[i]  # df.loc[i]['filename']  # filenames[i]
+
+        target = predicted[i]
+        target_name = target_names[target]
+
+        print(f'{filename} => {target_name}')
+
+    y_true = df['target'].tolist()
+    y_pred = predicted
+    labels = sorted(df['target'].unique().tolist())
+
+    # Show metrics.
+    print(sklearn.metrics.classification_report(
+        y_true,
+        y_pred,
+        target_names=[target_names[i] for i in labels],
+        labels=labels,
+    ))
+
+    return predicted
 
 
-def pipeline(steps):
+def classify_from_dump(
+    dump_name,
+    classifier,
+    target_names,
+    data_home=None,
+    force_good=True,
+    homography_model_path=os.path.join(
+        os.getcwd(), 'resource', 'model', 'xception_10000.h5'),
+    steps=[]  # steps are empty because we assume by default that the dump has been already processed
+):
     """
-    Run the training pipeline.
-
-    Parameters
-    ----------
-    steps
-        List of steps, i.e., pairs (name, func).
+    Perform data classification with classifier `classifier` from given
+    dataset dump. Perform also test phase and show metrics.
     """
+    billys_const.USE_DATASET_STRUCTURE = True
 
-    out = None
-    i = 0
+    logging.debug(
+        f'USE_DATASET_STRUCTURE: {billys_const.USE_DATASET_STRUCTURE}')
 
-    start_time = now()
+    df = revert(name=dump_name)
 
-    for item in steps:
-        step, func = item
-        logging.info(f'Performing step {i}: {step} ... ')
+    # Performing pipeline
+    if 'convert_to_images' in steps:
+        df = convert_to_images(df)
+    if 'dewarp' in steps:
+        df = dewarp(df, homography_model_path=homography_model_path)
+    if 'rotation' in steps:
+        df = rotation(df)
+    if 'brightness' in steps:
+        df = brightness(df)
+    if 'contrast' in steps:
+        df = contrast(df)
+    if 'ocr' in steps:
+        df = ocr(df)
+    if 'show_boxed_text' in steps:
+        df = show_boxed_text(df)
+    if 'extract_text' in steps:
+        df = extract_text(df)
+    if 'preprocess_text' in steps:
+        df = preprocess_text(df)
 
-        prev_out = out
-        out = func(prev_out)
+    # Performing prediction
+    predicted = classify(df, classifier)
 
-        i += 1
+    logging.info(f'Target names: {target_names}')
 
-    end_time = now()
-    elapsed = get_elapsed_time(start_time, end_time)
+    filenames = df['filename'].tolist()
 
-    logging.info(f'Pipeline completed in {elapsed} seconds.')
+    # Print predicted values.
+    for i in range(len(filenames)):
+        filename = filenames[i]  # df.loc[i]['filename']  # filenames[i]
 
-    return out
+        target = predicted[i]
+        target_name = target_names[target]
+
+        print(f'{filename} => {target_name}')
+
+    y_true = df['target'].tolist()
+    y_pred = predicted
+    labels = sorted(df['target'].unique().tolist())
+
+    # Show metrics.
+    print(sklearn.metrics.classification_report(
+        y_true,
+        y_pred,
+        target_names=[target_names[i] for i in labels],
+        labels=labels,
+    ))
+
+    return predicted
+
+
+def get_classifier(use_deterministic: bool = False, classifier_dump_name: str = None, data_home: str = None):
+    if not use_deterministic:
+        return revert(name=classifier_dump_name, data_home=data_home)
+    else:
+        class DeterministicClassifier:
+            def predict(self, documents: List[str]) -> List[int]:
+                from billys.text.classification import classify_bow
+
+                return classify_bow(documents=documents, unknown_cat_id=5, max_word_diff=1)
+
+        return DeterministicClassifier()
