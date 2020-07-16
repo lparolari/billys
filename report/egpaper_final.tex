@@ -72,7 +72,7 @@ steps are then combined in a pipeline which manage the whole process.
 \section{Introduction}
 
 The purpose of our work is to classify bills into some arbitrarily
-defined categories\footnote{a.k.a., target names or classes}, that can
+defined categories (a.k.a., target names or classes), that can
 fit almost all bill categories. This targets should help the user to
 better handle and organize bills for archiviation. We defined five
 classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
@@ -193,13 +193,13 @@ dataset.
   \begin{center}
     \begin{tabular}{p{1.5cm} p{1.2cm} p{1.2cm} p{3cm}}
       \hline
-      Categories  & Number of Documents & Number of Providers & Providers \\ \hline
-      \emph{Telephone and Cable} & 403 & 9 & Vodafone, Wind, Tre, Wind Tre, Telecom, TIM, Tele 2, Fastweb, Teletu \\
-      \emph{Electricity} & 276 & 6 & Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera \\
-      \emph{Gas} & 202 & 4 & Sorgenia, Ascotrade, Etra Energia, Hera \\
-      \emph{Water} & 123 & 3 & Etra, Alto Trevigiano Servizi, Hera \\
-      \emph{Garbage} & 45 & 1 & Savno \\ \hline
-      \textbf{Total} & 1048 & 19 &  \\ \hline
+      Categories                 & Number of Documents & Number of Providers & Providers                                                             \\ \hline
+      \emph{Telephone and Cable} & 403                 & 9                   & Vodafone, Wind, Tre, Wind Tre, Telecom, TIM, Tele 2, Fastweb, Teletu  \\
+      \emph{Electricity}         & 276                 & 6                   & Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera \\
+      \emph{Gas}                 & 202                 & 4                   & Sorgenia, Ascotrade, Etra Energia, Hera                               \\
+      \emph{Water}               & 123                 & 3                   & Etra, Alto Trevigiano Servizi, Hera                                   \\
+      \emph{Garbage}             & 45                  & 1                   & Savno                                                                 \\ \hline
+      \textbf{Total}             & 1048                & 19                  &                                                                       \\ \hline
     \end{tabular}
   \end{center}
   \label{table:main-dataset}
@@ -316,7 +316,7 @@ and for Residual Connections we refer to
 
 unlike spatial separable convolutions (wich is used to reduce the computational complexity of a single convolution operation involving one kernel by dividing it into two smaller kernels), depthwise separable convolutions work with kernels that cannot be “factored” into two smaller kernels. The depthwise separable convolution is so named because it deals not just with the spatial dimensions, but with the depth dimension (the number of channels) as well. Similar to the spatial separable convolution, a depthwise separable convolution splits a kernel into 2 separate kernels that do two convolutions: the depthwise convolution and the pointwise convolution. We refer to this article  that exaplain better this two operations in the details with an example.
 
---- Residual Connection SUMMARY --- 
+--- Residual Connection SUMMARY ---
 accuracy increases with increasing number of layers. But there is a limit to the number of layers added that result in accuracy improvement. So, if neural networks were universal function approximators then it should have been able to learn any simplex or complex function. But it turns out that, thanks to some problems like vanishing gradients and curse of dimensionality, if we have sufficiently deep networks, it may not be able to learn simple functions like an identity function. Now this is clearly undesirable.
 
 You can skip the training of few layers using skip-connections or residual connections. This is what we see in the image above. In fact, if you look closely, we can directly learn an identity function by relying on skip connections only. This is the exact reason why skip connections are also called as identity shortcut connections too. One solution for all the problems!
@@ -331,10 +331,10 @@ Transforma (DLT) algorithm. The network is made of 36 convolution
 layers and a total of 20,823,344 trainable parameter.
 
 \begin{figure}[h]
-	\centering
-	\includegraphics[width=0.48\textwidth]{images/xception-architecture.png}
-	\caption{The Xception architecture used in this work}
-	\label{xception-architecture}
+  \centering
+  \includegraphics[width=0.48\textwidth]{images/xception-architecture.png}
+  \caption{The Xception architecture used in this work}
+  \label{fig:xception-architecture}
 \end{figure}
 
 \subsection{Optical Character Recognition}
@@ -482,12 +482,12 @@ Classifier. See Section \ref{subsec:naive-bayes-classifier}.
   \begin{center}
     \begin{tabular}{p{2cm} p{5cm}}
       \hline
-      Class & Keywords \\ \hline
-      Water & acqua, idrico, depurazione, fognatura, trevigiano \\
-      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto, savno, igiene, ambientale\\
-      Gas & gas, naturale \\
-      Electricity & luce, energia, tensione, potenza, chilowatt, elettricita, elettrico, elettrica, green, enel, edison \\
-      Telephone and Cable & telefonia, telefonate, telefonico, chiamate, canoni, fibra, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim, fastweb, wind \\ \hline
+      Class                 & Keywords                                                                                                                                                    \\ \hline
+      Water                 & acqua, idrico, depurazione, fognatura, trevigiano                                                                                                           \\
+      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto, savno, igiene, ambientale                                                                     \\
+      Gas                   & gas, naturale                                                                                                                                               \\
+      Electricity           & luce, energia, tensione, potenza, chilowatt, elettricita, elettrico, elettrica, green, enel, edison                                                         \\
+      Telephone and Cable   & telefonia, telefonate, telefonico, chiamate, canoni, fibra, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim, fastweb, wind \\ \hline
     \end{tabular}
   \end{center}
   \label{table:determnistic-classifier-dict}
@@ -624,20 +624,20 @@ difference in performance with this task.
   \begin{center}
     \begin{tabular}{lll}
       \hline
-      Classifier & Accuracy & Support \\ \hline
-      \textbf{Main Dataset} \\
-      \small Without dewarping phase\\
-      \; \; Naive Bayes & $0.99$ & $1047$ \\
-      \; \; Deterministic & $0.99$ & $1047$ \\ \hline
-      
-      \textbf{Second Dataset} & & \\
-      \small Without dewarping phase \\
-      \; \; Naive Bayes & $0.59$ & $129$ \\
-      \; \; Deterministic & $0.40$ & $129$ \\ 
-      
-      \small With dewarping phase \\
-      \; \; Naive Bayes & $0.98$ & $129$ \\
-      \; \; Deterministic & $0.88$ & $129$ \\ \hline
+      Classifier              & Accuracy & Support \\ \hline
+      \textbf{Main Dataset}                        \\
+      \small Without dewarping phase               \\
+      \; \; Naive Bayes       & $0.99$   & $1047$  \\
+      \; \; Deterministic     & $0.99$   & $1047$  \\ \hline
+
+      \textbf{Second Dataset} &          &         \\
+      \small Without dewarping phase               \\
+      \; \; Naive Bayes       & $0.59$   & $129$   \\
+      \; \; Deterministic     & $0.40$   & $129$   \\
+
+      \small With dewarping phase                  \\
+      \; \; Naive Bayes       & $0.98$   & $129$   \\
+      \; \; Deterministic     & $0.88$   & $129$   \\ \hline
     \end{tabular}
   \end{center}
   \label{table:classifiers-comparison}
@@ -684,7 +684,7 @@ on the way they make photos. Another part were we dedicated lot of
 time was the classification part. In fact, that part was one of the
 harder because the complexity of the pipeline: a small change on the
 contrast preprocessing phase leads to a significant change on the
-classification stage. 
+classification stage.
 
 However, we are really happy with this experience and we know that the
 work is only at the beginning.
