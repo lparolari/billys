@@ -385,22 +385,35 @@ portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
 Now, we are ready to train the classifier in order to predict a bill
-category. For completing this task we proposed two idead: the first one consists of using a Naive Bayes Classifier and the secondo one consists of using a ``deterministic''
-classifier, that relies on words frequency and a ground truth
-vocabulary. The deterministic classifier is based on the simple idea that each
-document category has a small subset of words that are very relevant
-for the classification. Indeed, we have arbitrary defined the
-vocabulary that specifies what words we expect to find in a document
-based on its category. The performance and further details of this two different classifier are reported in section
-\label{subsec:classification-naive-bayes}.
+category. For completing this task we proposed using a
+``deterministic'' classifier, that relies on words frequency and a
+ground truth vocabulary. The deterministic classifier is based on the
+simple idea that each document category has a small subset of words
+that are very relevant for the classification. Indeed, we have
+arbitrary defined the vocabulary that specifies what words we expect
+to find in a document based on its category. Then, the classifier
+applies a simple algorithm, which works as follows:
+
+\begin{itemize}
+  \item Compute the frequency of each word in a given bill;
+  \item For each word, if it is a relevant word\footnote{A word $w$ is
+    a relevant word if it is contained in some keyword $kw$ and the
+    longest common subsequence between $w$ and $kw$ is at least $|kw|
+    - 1$.}, sum its contribution to the aggregate sum of the category
+    of that word;
+  \item Return the class which has more contributes.
+\end{itemize}
 
 The Figure \ref{table:determnistic-classifier-dict} shows an example
 of the vocabulary (italian version) we used to perform bills
-classification, how we can see, it is very small and effective.
-On the contrary, one could think to automatically generate the
+classification, how we can see, it is very small and effective.  On
+the contrary, one could think to automatically generate the
 vocabulary: this could be a valid option! See the Section
 \ref{sec:future-works}.
-The classification is made by adding all the words frequency belonging to the vocabolary contained inside the bill in the corrisponding class. After the analisys of all the words (and their frequencies) in the bill, we pick the category that has earned the most points, and classify the bill according to that class.
+
+Obviously the deterministic classifier is not the only way to perform
+the classification task, in fact, we experimented also a Naive Bayes
+Classifier. See Section \ref{subsec:naive-bayes-classifier}.
 
 \bgroup
 \def\arraystretch{1.3}%
@@ -447,12 +460,12 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 	\label{bright-constrast-experiment}
 \end{figure}
 
-\subsection{Machine Learning or Deterministic models?}
-\label{subsec:classification-naive-bayes}
+\subsection{Naive Bayes Classifier}
+\label{subsec:naive-bayes-classifier}
 
-The two different classification strategy proposed in Section
+The deterministic classification strategy proposed in Section
 \ref{subsec:classification} is not the only feasible way. There are
-many machine learning algorithms applicable over text classification:
+many machine learning algorithms applicable with text classification:
 one over the other is Naive Bayes.
 
 The Naive Bayes classifier, unlike the deterministic classifier, comes
@@ -464,7 +477,7 @@ classification phase for predicting the document class. For our task
 we need the Multinomial Naive Bayes classifier, as we have to predict
 multiple classes, not only two.
 
-However, due to the definition of our problem, this type of classifier
+Due to the definition of our problem, this type of classifier
 is probabily an overkill: it bases the predicted target on all the
 text provided to the classifier. Under our domain, documents are very
 likely to be similar for most of their parts and we have only few
@@ -474,11 +487,13 @@ banners, disclaimers, formal opening of letters, and so on. Another
 problem we had, as described in Section \ref{sec:dataset}, is the
 problem of the headers: we can have two bills about different
 categories with same header (same user data), or bills about same
-category with different headers (different user data). This kind of problem cannot be easily handled with such a classifier, so at the end we decided to chose the deterministic classifier.
+category with different headers (different user data).
 
-We have seen in our experiment that the Naive Bayes classifier obtained a 99\% of accuracy, in all the condition, even if we dewarp the images or we brightning it. 
-
-TODO: CITARE IL TERZO DATASET E UN ATTIMO I RISULTATI OTTENUTI, POI ELIMINARLI DALLA TABELLA SOTTO
+We tried to test this two different ideas with another dataset
+composed by unseen bills with different headers and providers, and we
+discovered that the two perform quite the same. However, we must
+underline that this third dataset was composed by very very few data,
+so the results are not reliable.
 
 \subsection{Results}
 
