@@ -188,7 +188,7 @@ In the following summer it is reported all the providers considered per category
 
 Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{fig:pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
 
-The \textbf{second dataset} provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
+The \textbf{second dataset} provided consists of 129 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
 
 
 \begin{comment}
@@ -208,7 +208,7 @@ described below.
 	processable by an optical recognition tool. In order to perfomr
 	the OCR we have to preprocess the image and rotate, resize and
 	strech the image.
-	\item Contrast/illumination augmentation. Also the illumination of an
+	\item Contrast/illumination correction. Also the illumination of an
 	image can be a nasty problem for an OCR tool, as it needs a clear
 	distinction written text and other stuff in order to read that.
 	\item Optical Character Recognition. This can be a very delicate
