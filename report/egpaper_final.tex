@@ -333,14 +333,15 @@ steps really matters, so we ordered them for better performances.
   \item \textbf{Remove punctuaction}: also the punctuaction do not really
     matters, and indeed cannot say anything on the class of the bill
     that we are considering, so we decided to remove them.
-  \item \textbf{Remove numbers}: bills can be full of numbers and we can find
-    them under many forms, as, for example, dates, identifiers,
-    furniture comsumption, and so on. However, also numbers cannot say
-    anything about the bill class, so they were removed and replaced
-    with the keyword \codeinline{<num>}, which instead can be more
-    informative as in a bag of words represents the number of numbers
-    in a bill. For this case, we decied to do not completely remove
-    the information but to keep only its condensed version.
+  \item \textbf{Remove numbers}: bills can be full of numbers and we
+    can find them under many forms, as, for example, dates,
+    identifiers, furniture comsumption, and so on. However, also
+    numbers cannot say anything about the bill class, so they were
+    removed and replaced with the keyword \codeinline{<num>}, which
+    instead can be more informative as when vectorized in bag of words
+    its numerosity is associated with the the number of numbers in a
+    bill. For this case, we decied to do not completely remove the
+    information but to keep only its condensed version.
   \item \textbf{Remove stopwords}: in order to obtain the most informative
     textual representation of a bill we had to remove also
     insignificat words like stopwords. Stopwords are words that can be
@@ -409,21 +410,22 @@ portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
 Now, we are ready to train the classifier in order to predict a bill
-category. For completing this task we proposed using a
-``deterministic'' classifier and a Naive Bayes classifier. The deterministic classifier is based on the
-simple idea that each document category has a small subset of words
-that are very relevant for the classification. Indeed, we have
-arbitrary defined the vocabulary that specifies what words we expect
-to find in a document based on its category. Then, the classifier
-applies a simple algorithm, which works as follows:
+category. For completing this task we proposed two strategies: a
+``deterministic'' classifier and a Naive Bayes classifier. The
+deterministic classifier is based on the simple idea that each
+document category has a small subset of words that are very relevant
+for the classification. Indeed, we have arbitrary defined the
+vocabulary that specifies what words we expect to find in a document
+based on its category. Then, the classifier applies a simple
+algorithm, which works as follows:
 
 \begin{itemize}
   \item Compute the frequency of each word in a given bill;
   \item For each word, if it is a relevant word\footnote{A word $w$ is
     a relevant word if it is contained in some keyword $kw$ and the
-    longest common subsequence between $w$ and $kw$ is at least $|kw|
-    - 1$.}, sum its contribution to the aggregate sum of the category
-    of that word;
+    longest common subsequence between $w$ and $kw$ is at least
+    $\mathrm{len}(kw) - 1$.}, sum its contribution to the aggregate
+    sum of the category of that word;
   \item Return the class which has more contributes.
 \end{itemize}
 
@@ -549,7 +551,7 @@ the features. Indeed, it calculates the probability of a certain word
 to be seen in a document and it uses that probability in
 classification phase for predicting the document class. For our task
 we need the Multinomial Naive Bayes classifier, as we have to predict
-multiple classes, not only two.
+multiple classes, not only $0$ or $1$.
 
 Due to the definition of our problem, this type of classifier
 is probabily an overkill: it bases the predicted target on all the
@@ -563,11 +565,13 @@ problem of the headers: we can have two bills about different
 categories with same header (same user data), or bills about same
 category with different headers (different user data).
 
-We tried to test this two different ideas with another dataset
-composed by unseen bills with different headers and providers, and we
-discovered that the two perform quite the same. However, we must
-underline that this third dataset was composed by very very few data,
-so the results are not reliable.
+Anyway, as Naive Bayes usually performs very well we tried an
+implementation tuned with a grid search strategy. Then we evaluated
+its model performances on another dataset composed by unseen bills
+with different headers and providers, and we discovered that it
+performs almost the same as the deterministic classifier.  However,
+must underline that this third dataset was composed by very very few
+data, so the results are not reliable.
 
 \paragraph{Results}
 
