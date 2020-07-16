@@ -192,7 +192,7 @@ home bills, as in the main dataset, but in this case they are taken
 with perspective distorsion, rotation and with parts of the
 background. With this dataset we are able to test the full
 pipeline. The results obtained with this dataset and with the full
-pipeline are reported in Section \ref{sec:experiments}.
+pipeline are reported in Subsection \ref{subsec:naive-bayes-classifier}.
 
 \section{Proposed Method}
 \label{sec:proposed-method}
@@ -228,7 +228,7 @@ Recognition in our project because we thought that using a simple CNN
 to classify the bills could bring some problems like, what are the
 behaviuor of an CNN in front of a new unseen bill about another
 supplier. Another reason is the fact that a CNN need a lot of examples
-(huge dataset) to be trained on and because we have only "few"
+(huge dataset) to be trained on and because we have only ``few''
 examples we prefered to try another approach. So we chose Tesseract to
 extrapolate all the text inside a bill and then classify the bill
 accordingly to the text extracted after a preprocessing step. In this
@@ -238,7 +238,7 @@ unseen new bill the words extrapoleted are in general the same as the
 words extracted from the bills included in the main dataset. Once we
 have chosen to include an OCR all the rest of the pipeline is built
 considering all the major drawback already known for OCRs, like image
-preprocesing (page dewarping and Brightness Enhancer). Once the text
+preprocesing (page dewarping and brightness enhancing). Once the text
 of a bill is extrapolated we need to preproccess it before the final
 step. This part is important for excluding the frequent words like
 articles and verbs often used wich are not important for the final
@@ -254,47 +254,46 @@ designed pipeline.
 
 \subsection{Image Preprocessing}
 
-The image preprocessing phase is in charge of adjusting all the aspect
-of a mobile camera taken photos. This includes brightness and contrast
-adjustments, dewarping, skew correction and others. The first task of
-our pipeline infact is try to recover a flat bed scanned document from
-a camera taken photos. For this task we used the work done in
-\cite{Korber18} wich uses an Xception Neural Network \cite{Xception}
-to perform this task, with appreciable results according to the
-article. In figure \ref{fig:xception-architecture} is reported the
-Xception architecture.  We have observed that in some experiments,
-that involve the warped dataset which consists of mobile camera taken
-photos of bills in extreme conditions, the network doesn't correctly
-adjust the homography of some documents contained in the dataset. But
-this is not so bad because the Neural network increased a lot the
-performances of our pipeline which are present in Experiment
-section. The last step of the image preprocessing is the correction of
-the brightness and constrast of the image. This is done because there
-are critical photos that could arise many problem for the OCR phase
-and this problems are be better exaplined in the Experiment section.
+The image preprocessing is a crucial point in our application. Its
+main responsability is to adjust all the aspects of a mobile camera
+taken photo. This includes enhancing brightness and contrast,
+dewarping, skew correction and others.
+
+The first in order to recover a nice image is the dewarp. For this
+task we started from the work done in \cite{Korber18} wich uses an
+Xception Neural Network (see \cite{Xception}) to perform this task,
+with appreciable results according to the article. In Subsection
+\ref{subsec:xception-nn-architecture} we describe the Xception Neural
+Network architecture while the Figure \ref{fig:xception-architecture}
+pictorially shows it.
+
+The second step is contrast/illumination adjustment. A good
+illumination of an image is crucial for a good OCR result. Refer to
+the Section \ref{subsec:camera-taken-illuminance-quality} for further
+details.
 
 \subsubsection{The Xception Neural Network}
+\label{subsec:xception-nn-architecture}
 
 The dewarping phase is completly based on the work done in
 \cite{Korber18}. Accordingly to the author, the recovery of the
 homography of a mobile camera taken photos of a document is delegated
-to a Xception Neural Network. As it is stated in the paper
-\cite{Xception} this architecture relies heavily on prior efforts in
-the Inception architecture wich first demonstrated the advantages of
+to a Xception Neural Network. The paper \cite{Xception} describes this
+architecture ans shows how it heavily relies on prior efforts in the
+Inception architecture which first demonstrated the advantages of
 factoring the convolutions into multiple branches operating
-successively on channels and then on space. Also this architecture is
+successively on channels and then on space. Also, this architecture is
 entirely based upon the Residual Connections and Depthwise separable
-convolutions. For the Depthwise separable convolutions advantages we
-refer to the article \cite{Wang18} and for Residual Connections we
-refer to \cite{Sahoo17}.
+convolutions. This aspects are treated in \cite{Sahoo17} and
+\cite{Wang18}, respectively.
 
-The used Xception Neural Network is trained over 1.5M synthetic images
-dataset. It uses Adam optimization method in combination with the
-L1-loss to predict the 4 corner points of the distorted document
-image. Then given these 4 obtained points from the Xception Neural
-Network, the homography matrix H is computed using Direct Linear
-Transform (DLT) algorithm. The network is made of 36 convolution
-layers and a total of 20,823,344 trainable parameter.
+The used Xception Neural Network is trained over $1.5$ million
+synthetic images. It uses the \emph{Adam} optimization method in
+combination with the \emph{L1-loss} to predict the four corner points
+of the distorted image. Then given these corners, the homography
+matrix $H$ is computed using a \emph{Direct Linear Transform} (DLT)
+algorithm. The network is made of thirtysix convolution layers and a
+total of more than twenty million trainable parameter.
 
 \begin{figure}[h]
   \centering
@@ -303,12 +302,22 @@ layers and a total of 20,823,344 trainable parameter.
   \label{fig:xception-architecture}
 \end{figure}
 
+We empirically noticed a sort of bug in the network: it do not dewarp
+images with extreme conditions of contrast/illumination, but this is
+not really a problem as the exepriment in Subsection
+\ref{subse:dewarping-or-not} shows.
+
 \subsection{Optical Character Recognition}
 
-As we have seen this phase is delegated to Tesseract, which is a
-open-source OCR for extracting all the text containded in a
-image. Tesseract is developed from Google and it is publically
-available on GitHub.
+The OCR task can be a very complex part of the pipeline. So, instead
+of focusing on already developed tools we decided to delegate the OCR
+task to Tesseract. Tesseract is an open-source, optical character
+recognition tool developed at Google and it source code is freely
+available on GitHub under the Apache License, Version 2.0.
+
+Tesseract works out-of-the-box with sveral languages, included
+italian. So, as the good realiability of Tesseract we decided to used
+it as a black-box and focus on more delicated tasks.
 
 \subsection{Text Preprocessing}
 
