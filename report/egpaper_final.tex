@@ -253,7 +253,7 @@ a camera taken photos. For this task we used the work done in
 \cite{Xception} to perform this task, with appreciable results
 according to the article. In figure \ref{fig:xception-architecture} is
 reported the Xception architecture.
-We have observed that in some experiments, that involve the second dataset which consists of mobile camera taken photos of bills in extreme conditions,
+We have observed that in some experiments, that involve the warped dataset which consists of mobile camera taken photos of bills in extreme conditions,
 the network doesn't correctly adjust the homography of some documents
 contained in the dataset. But this is not so bad because the Neural network increased a lot the performances of our pipeline which are present in Experiment section. The last step of the image preprocessing is
 the correction of the brightness and constrast of the image. This is
@@ -487,7 +487,7 @@ more precise and there are fewer blank spaces.
 \end{figure}
 
 Moreover we tried to do the classification of the photos contained in
-the second dataset, which is made of bills photos with perspective
+the warped dataset, which is made of bills photos with perspective
 distorsion and a lot of background, with Naive Bayes Classificator
 trained on the main dataset and without dewarping the photos. In this
 case we obtained an accuracy of 0.64 instead of 0.95 obtained with the
@@ -578,7 +578,7 @@ data, so the results are not reliable.
 The Table \ref{table:classifiers-comparison} shows a comparison
 between the performance of the main and the warped dataset (described
 in Section \ref{sec:dataset}), for the Naive Bayes classifier trained
-on our main dataset and the deterministic classifier. In the second
+on our main dataset and the deterministic classifier. In the warped
 dateset, we enabled and disabled the dewarping phase to see the
 difference in performance with this task.
 
@@ -592,7 +592,7 @@ difference in performance with this task.
       \; \; Naive Bayes       & $0.99$   & $1047$  \\
       \; \; Deterministic     & $0.99$   & $1047$  \\ \hline
 
-      \textbf{Second Dataset} &          &         \\
+      \textbf{Warped Dataset} &          &         \\
       \small Without dewarping phase               \\
       \; \; Naive Bayes       & $0.59$   & $129$   \\
       \; \; Deterministic     & $0.40$   & $129$   \\
