@@ -615,19 +615,40 @@ order to improve results and extends our ideas. We list below some of
 possible future works.
 
 \begin{itemize}
-  \item Enhanced Text Preprocessing. Our text preprocessing is not
+  \item Enhanced text preprocessing. Our text preprocessing is not
     sophisticaded, instead it is composed by the necessary steps in
     order to get a decent classifier. An enhance on text preprocessing
     could be the header removal. Under the bills domain, headers are
     composed of extremenly non-relevant data, that could be discarded
     with a vocabulary of names or something similar.
-  \item Automatic Vocabulary Building. For concreteness, we manually
-    built the vocabulary used in the deterministic classifier, instead
-    one could let the machine generate it. In fact, our approach has
-    some drawbacks: the application tends to be static, but mainly,
-    the vocabulary can miss some relevant words. A well configured
-    vocabulary automatic building can surely perform better wrt the
-    manual one.
+  \item Automatic vocabulary building for deterministic
+    classifier. For concreteness, we manually built the vocabulary
+    used in the deterministic classifier, instead one could let the
+    machine generate it. In fact, our approach has some drawbacks: the
+    application tends to be static, but mainly, the vocabulary can
+    miss some relevant words. A well configured vocabulary automatic
+    building can surely perform better wrt the manual one.
+  \item Automatic contrast/illumination gain. Our illumination
+    enhancing technique is based on a parameter, namely \emph{gain},
+    which is manually setted before the whole pipeline execution and
+    is responsible for the contrast/illumination augmentation. An
+    interesting improvement could be a system which can decide itself
+    how much gain use for the contrast/illuminanche augmentation. In
+    fact, we noticed that with the wrong gain values performances can
+    be very poor and surely a single value for each sample provided
+    is not the best choice.
+  \item Enhanced Dewarping. As we shown in the Table
+    \ref{table:classifiers-comparison}, a good image dewarp can really
+    help in classification. Indeed, another improvement could be a
+    fine tuning for the dewarp system. The goal is obtain a network
+    which is really good in finding sheet of paper corners and return
+    them for the real dewarping. An idea is to train a neural network
+    on a relatively huge dataset that contains image where in the
+    foreground there is a sheet of paper (even with perspective
+    distorsion and rotation) and in the foreground tables
+    textures. This would help a lot as the dewarp performs very bad
+    when the background has the same color of the document in the
+    foreground.
 \end{itemize}
 
 \section{Conclusion}
