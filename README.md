@@ -1,3 +1,3 @@
 # Billys
 
-TODO
+> Vision and cognitive services exam project.
