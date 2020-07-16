@@ -32,7 +32,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{Bills Classifier}
+\title{Billys: The Bills Classifier}
 
 \author{Bryan Lucchetta\\
 {\small University of Padua}\\
@@ -57,7 +57,7 @@ Luca Parolari\\
 Everyone, sooner or later, has to face the messy world of bills. Every
 month we get four/five or even more bills, coming from different
 providers and about different expenses, with the duty to keep them
-save and easily available in case of need. This task can, even if can
+safe and easily available in case of need. This task can, even if can
 be quite easy, is very boring for humans. Why don't let that a
 computer do it! The main task of our application is, indeed, to put in
 order this messy world.  In this paper we present our solution to this
@@ -73,22 +73,57 @@ steps are then combined in a pipeline which manage the whole process.
 
 The purpose of our work is to classify bills into some arbitrarily
 defined categories\footnote{a.k.a., target names or classes}, that can
-fit almost all bill category. This targets should help the used to
+fit almost all bill categories. This targets should help the user to
 better handle and organize bills for archiviation. We defined five
 classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
-  Recycling} and \emph{Telephone and Cable}. For treatability each to
-each class an integer from $0$ to $4$ is assigned, respectively. Bills
-are the very foundamental component of the whole application. A bill,
-or an invoice, is a commercial document issued by a seller to a buyer,
-relating to a sale transaction and indicating the products,
-quantities, and agreed prices for products or services the seller had
-provided the buyer. In pratical terms, for us, a bill can be a pdf
-file or an image (even a a camera taken image) to process.
+  Recycling} and \emph{Telephone and Cable}. For treatability we
+assigned to each class an integer from $0$ to $4$ is assigned,
+respectively. Bills are the very foundamental component of the whole
+application. A bill, or an invoice, is a commercial document issued by
+a seller to a buyer, relating to a sale transaction and indicating the
+products, quantities, and agreed prices for products or services the
+seller had provided the buyer. In pratical terms, for us, a bill can
+be a pdf file or an image (even a a camera taken image) to process.
+
+The task itself is very complex and can lead to a messy and
+unmantainable solution. For this reason we develop a robust and well
+structured pipeline with the aim to face some of the main problems,
+described below.
+\begin{itemize}
+  \item Image dewarping. Camera taken image are usually not directly
+    processable by an optical recognition tool. In order to perfomr
+    the OCR we have to preprocess the image and rotate, resize and
+    strech the image.
+  \item Contrast/illumination augmentation. Also the
+    illumination/contrast of an image can be a nasty problem for an
+    OCR tool, as it needs a clear distinction from written text and
+    other stuff in order to perform well.
+  \item Optical Character Recognition. The OCR can be a very delicate
+    point, as the application performances depends on how the OCR
+    extracts data from images.
+  \item Text preprocessing. An huge amout of details can be extracted
+    from the OCR, but surely not all of them are relevant for
+    application's purposes. We need to disregard them for good
+    results.
+  \item Feature classification. At the end, our need is to classify
+    the given object. This is a complex task as document data can be
+    very different and very similar at the same time.
+\end{itemize}
 
 In the following sections we present our work and we face the problems
-arised during this project.
-
-TODO: overview of your results (scritto dal prof)
+described above. We start from related works in Section
+\ref{sec:related-work}, where we discuss about our starting
+point. Then, in Section \ref{sec:dataset}, we present our dataset and
+some information about the context of the data we used. After that, in
+Section \ref{sec:proposed-method}, we show adopted solutions and
+describe smart ideas we used in order to solve the core problem. We
+then explore the pipeline and all its components in order to present
+full details of what we have done. In Section \ref{sec:experiments},
+we also show experiments and fails we have done before getting nice
+results. We conclude then with future works and possible enhancements
+that for concreteness we excluded from this presentation and we wrap
+up with some considerations about the work in Section
+\ref{sec:future-works} and \ref{sec:conclusion}, respectively.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -236,10 +271,11 @@ in order to remove non-relevan features: pratically, it transform the
 text into a more digestible form so that machine learning algorithms
 can perform better.
 
-The implementation of this step follows logical some very simple but
-basic ideas for text preprocessing. In fact we normalize the text into
-its base form. Te inner pipeline for this phase is composed by atomic
-steps, described below. Note that for this task, the execution order of some steps really matters, so we organized them for better results. 
+The implementation of this step follows some very simple ideas for
+text preprocessing. Indeed, we just normalize the text into its base
+form. The inner pipeline for this phase is composed by atomic steps,
+described below. Note that for this task, the execution order of some
+steps really matters, so we ordered them for better performances.
 
 \begin{enumerate}
   \item \textbf{To lowercase}: the first step for the text normalization is to
@@ -249,16 +285,16 @@ steps, described below. Note that for this task, the execution order of some ste
     and the OCR may also miss them, so we decided to exclude them from
     the principle and to represent words with their non accented
     versions.
-  \item \textbf{Remove punctuaction}: also the punctuaction do not really
-    matters, and indeed can not say anything on the class of the bill
+  \item Remove punctuaction. Also the punctuaction do not really
+    matters, and indeed cannot say anything on the class of the bill
     that we are considering, so we decied to remove them.
   \item \textbf{Remove numbers}: bills can be full of numbers and we can find
     them under many forms, as, for example, dates, identifiers,
-    furniture comsumption, and manyso on. However, also numbers cannot
-    say anything about the bill class, so they were removed and replaced
-    with the keyword TODO STYLE <num>, which instead can more
-    informative as with a bag of words can represent the number of
-    numbers in a bill. For this case, we decied to not completely remove
+    furniture comsumption, and so on. However, also numbers cannot say
+    anything about the bill class, so they were removed and replaced
+    with the keyword \codeinline{<num>}, which instead can be more
+    informative as in a bag of words represents the number of numbers
+    in a bill. For this case, we decied to do not completely remove
     the information but to keep only its condensed version.
   \item \textbf{Remove stopwords}: in order to obtain the most informative
     textual representation of a bill we had to remove also
@@ -293,11 +329,11 @@ steps, described below. Note that for this task, the execution order of some ste
 \subsection{Features Classification}
 \label{subsec:classification}
 
-The features classification is itself a core step, which is needed for
-the real bills classification. Indeed, the pipeline steps before the
-features classification can be viewed as a giant image preprocessing
-step, with the goal to preprare a nice subset of features to be used
-in the classifier.
+The features classification is itself a core step, needed for the real
+bills classification. Indeed, the pipeline steps before the features
+classification can be viewed as a giant image preprocessing step, with
+the goal to preprare a nice subset of features to be used in the
+classifier.
 
 Regardless of the chosen implementation for a classifier, textual
 features need a transformation in order to be handled: we need to
@@ -327,43 +363,43 @@ therefore less informative than those that occur only in a smaller
 portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
-Then, we are ready to train the classifier in order to predict a bill
-category. For completing this task we proposed two variants of
-classifier:
-\begin{itemize}
-  \item the Naive Bayes classifier,
-  \item the ``deterministic classifier'', based on words frequency and
-    a ground truth vocabulary.
-\end{itemize}
+Now, we are ready to train the classifier in order to predict a bill
+category. For completing this task we proposed a ``deterministic''
+classifier, that relies on words frequency and a ground truth
+vocabulary. This classifier is based on the simple idea that each
+document category has a small subset of words that are very relevant
+for the classification. Indeed, we have arbitrary defined the
+vocabulary that specifies what words we expect to find in a document
+based on its category. This is the main reason that led us to chose
+for a deterministic classifier instead of a probabilistic classifier.
+For further details see the experiment reported to Section
+\label{subsec:classification-naive-bayes}.
 
-This two methods are based on different ideas. The Naive Bayes
-classifier comes from the family of simple probabilistic classifiers
-based on applying Bayes' theorem with strong (naive) independence
-assumptions between the features. Indeed, it calculates the
-probability of a certain word to be seen in a document and it uses
-that probability in classification phase for predicting the document
-class. For our task we need the Multinomial Naive Bayes classifier, as
-we have to predict multiple classes, not only two. The deterministic
-classifier instead is based on the idea that each document category
-has a small subset of words that are very relevant for the
-classification. Indeed, we have arbitrary defined the vocabulary that
-specifies what words we expect to find in a document based on its
-category. Before manually building the vocabulary, we tried to let the
-machine builds automatically it. See the Experiment REF.
+The Figure \ref{table:determnistic-classifier-dict} shows an example
+of the vocabulary (italian version) we used to perform bills
+classification, how we can see, it is very small and effective.
+On the contrary, one could think to automatically generate the
+vocabulary: this could be a valid option! See the Section
+\ref{sec:future-works}.
 
-The implementation of all components, except the deterministic
-classifier (which is implemented manually), are highly based on
-scikit-learn tools\footnote{In particular, we referred to the awesome
-  guide \href{
-    https://scikit-learn.org/stable/tutorial/text\_analytics/working\_with\_text\_data.html}{
-    ``Working with Text Data''} form Scikit Learn.}  Indeed, bag of
-words and counting text occurencies are implemented with the
-\codeinline{CountVectorizer} from the scikit-learn package
-\codeinline{sklearn.feature\_extraction.text}. The frequency
-extraction is implemented with \codeinline{TfidfTransformer} from the
-same package as before, while the Naive Bayes classifier is
-implemented with \codeinline{MultinomialNB} from \codeinline{from
-  sklearn.naive\_bayes} package.
+\bgroup
+\def\arraystretch{1.3}%
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{p{2cm} p{5cm}}
+      \hline
+      Class & Keywords \\ \hline
+      Water & acqua, idrico, depurazione, fognatura \\
+      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto \\
+      Gas & gas, naturale \\
+      Electricity & luce, energia, tensione, potenza, elettricita, elettrico, elettrica \\
+      Telephone and Cable & telefonia, telefonico, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim \\ \hline
+    \end{tabular}
+  \end{center}
+  \label{table:determnistic-classifier-dict}
+  \caption{Example of one vocabulary for the deterministic classifier.}
+\end{table}
+\egroup
 
 \section{Experiments}
 \label{sec:experiments}
@@ -391,9 +427,83 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 	\label{bright-constrast-experiment}
 \end{figure}
 
-\subsection{Machine Learning or Traditional Algorithms?}
-Parlare del confronto tra un classificatore deterministico e un algorimo di machine learning, interessante sarebbec capire chi ha un accuratezza più alta. Confrontare anche con il numero di esempi richiesti.
 
+\subsection{Data augmentation}
+
+TODO
+
+\subsection{Classification with Naive Bayes}
+\label{subsec:classification-naive-bayes}
+
+The classification strategy proposed in Section in
+\ref{subsec:classification} is not the only feasible way. There are
+many machine learning algorithms applicable over text classification:
+one over the other is Naive Bayes.
+
+The Naive Bayes classifier, unlike the deterministic classifier, comes
+from the family of simple probabilistic classifiers based on applying
+Bayes' theorem with strong (naive) independence assumptions between
+the features. Indeed, it calculates the probability of a certain word
+to be seen in a document and it uses that probability in
+classification phase for predicting the document class. For our task
+we need the Multinomial Naive Bayes classifier, as we have to predict
+multiple classes, not only two.
+
+However, due to the definition of our problem, this type of classifier
+is probabily an overkill: it bases the predicted target on all the
+text provided to the classifier. Under our domain, documents are very
+likely to be similar for most of their parts and we have only few
+interesting words for each document that differs. Also, bills contains
+huge amount of non-relevant data for our application like marketing
+banners, disclaimers, formal opening of letters, and so on. Another
+problem we had, as described in Section \ref{sec:dataset}, is the
+problem of the headers: we can have two bills about different
+categories with same header (same user data), or bills about same
+category with different headers (different user data). This kind of
+problem cannot be easily handled with such a classifier, so at the end
+we decided to chose the deterministic classifier.
+
+The Table \ref{table:classifiers-comparison} shows a comparison
+between the the performance on an unseen dataset (described in Section
+\ref{sec:dataset}), for the Naive Bayes classifier, trained on our
+main dataset and the deterministic classifier.
+
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{lll}
+      \hline
+      Classifier & Accuracy & Support \\ \hline
+      Naive Bayes & $0.65$ & $26$ \\
+      Deterministic & $0.88$ & $26$ \\ \hline
+    \end{tabular}
+  \end{center}
+  \label{table:classifiers-comparison}
+  \caption{Accuracy comparison between Naive Bayes classifier and
+    deterministic calssifier on unseen data.}
+\end{table}
+
+\section{Future Works}
+\label{sec:future-works}
+
+The task offers a infinite list of related works that can be done in
+order to improve results and extends our ideas. We list below some of
+possible future works.
+
+\begin{itemize}
+  \item Enhanced Text Preprocessing. Our text preprocessing is not
+    sophisticaded, instead it is composed by the necessary steps in
+    order to get a decent classifier. An enhance on text preprocessing
+    could be the header removal. Under the bills domain, headers are
+    composed of extremenly non-relevant data, that could be discarded
+    with a vocabulary of names or something similar.
+  \item Automatic Vocabulary Building. For concreteness, we manually
+    built the vocabulary used in the deterministic classifier, instead
+    one could let the machine generate it for him. In fact, our
+    approach has some drawbacks: the application tends to be static,
+    but mainly, the vocabulary can miss some relevant words. A well
+    configured vocabulary automatic building can surely perform better
+    wrt the manual one. 
+\end{itemize}
 
 \section{Conclusion}
 \label{sec:conclusion}
