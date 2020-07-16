@@ -9,11 +9,23 @@
 \usepackage{comment}
 
 % Include other packages here, before hyperref.
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{color}
 
 % If you comment hyperref and then uncomment it, you should delete
 % egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
 % run, let it finish, and you should be clear).
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
+
+% Setup hyperref
+\hypersetup{
+  colorlinks=true,
+  linkcolor=NavyBlue,
+  filecolor=magenta,
+  urlcolor=cyan,
+  pdftitle={Billys: The Bills Classifier},
+  bookmarks=true,
+}
 
 % *** Custom commands
 
@@ -684,6 +696,11 @@ classification stage.
 However, we are really happy with this experience and the obtained
 result and we know that the work can still be improved by taking into
 account all the ideas and considerations made in this report.
+
+The project is available also on GitHub:
+\begin{center}
+  \href{https://github.com/lparolari/billys}{https://github.com/lparolari/billys}
+\end{center}
 
 {\small
 \bibliographystyle{ieee_fullname}
