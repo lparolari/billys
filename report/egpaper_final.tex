@@ -143,7 +143,7 @@ Classifier, TODO set references.
 
 \section{Dataset}
 \label{sec:dataset}
-When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 3 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase, and a third dataset consisisting of bills coming from different providers, not included in the main dataset, to see if the application is able to correctly classify unseen bills.\\
+When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 2 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase.\\
 
 For the \textbf{main dataset} we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
 
@@ -190,7 +190,6 @@ Our main dataset is mainly obtained with front-taken photos of bills, and no per
 
 The \textbf{second dataset} provided consists of nearly 150 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
 
-The \textbf{third} and the last \textbf{dataset} used consists of nearly TODO (inserire la quantita) unseen bills belonging to the same categories of the main dataset, but this time we excluded from the main dataset some providers to test after the performance of this application when we present it some new photo of bills coming from new unseen providers. We will see the obtained performance in the experiment section.
 
 \begin{comment}
 #if 0
@@ -285,7 +284,7 @@ steps really matters, so we ordered them for better performances.
     and the OCR may also miss them, so we decided to exclude them from
     the principle and to represent words with their non accented
     versions.
-  \item Remove punctuaction. Also the punctuaction do not really
+  \item \textbf{Remove punctuaction}: also the punctuaction do not really
     matters, and indeed cannot say anything on the class of the bill
     that we are considering, so we decied to remove them.
   \item \textbf{Remove numbers}: bills can be full of numbers and we can find
@@ -364,15 +363,13 @@ portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
 Now, we are ready to train the classifier in order to predict a bill
-category. For completing this task we proposed a ``deterministic''
+category. For completing this task we proposed two idead: the first one consists of using a Naive Bayes Classifier and the secondo one consists of using a ``deterministic''
 classifier, that relies on words frequency and a ground truth
-vocabulary. This classifier is based on the simple idea that each
+vocabulary. The deterministic classifier is based on the simple idea that each
 document category has a small subset of words that are very relevant
 for the classification. Indeed, we have arbitrary defined the
 vocabulary that specifies what words we expect to find in a document
-based on its category. This is the main reason that led us to chose
-for a deterministic classifier instead of a probabilistic classifier.
-For further details see the experiment reported to Section
+based on its category. The performance and further details of this two different classifier are reported in section
 \label{subsec:classification-naive-bayes}.
 
 The Figure \ref{table:determnistic-classifier-dict} shows an example
@@ -381,6 +378,7 @@ classification, how we can see, it is very small and effective.
 On the contrary, one could think to automatically generate the
 vocabulary: this could be a valid option! See the Section
 \ref{sec:future-works}.
+The classification is made by adding all the words frequency belonging to the vocabolary contained inside the bill in the corrisponding class. After the analisys of all the words (and their frequencies) in the bill, we pick the category that has earned the most points, and classify the bill according to that class.
 
 \bgroup
 \def\arraystretch{1.3}%
@@ -389,11 +387,11 @@ vocabulary: this could be a valid option! See the Section
     \begin{tabular}{p{2cm} p{5cm}}
       \hline
       Class & Keywords \\ \hline
-      Water & acqua, idrico, depurazione, fognatura \\
-      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto \\
+      Water & acqua, idrico, depurazione, fognatura, trevigiano \\
+      Garbage and Recycling & spazzatura, immondizia, riciclato, riciclo, rifiuti, rifiuto, savno, igiene, ambientale\\
       Gas & gas, naturale \\
-      Electricity & luce, energia, tensione, potenza, elettricita, elettrico, elettrica \\
-      Telephone and Cable & telefonia, telefonico, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim \\ \hline
+      Electricity & luce, energia, tensione, potenza, chilowatt, elettricita, elettrico, elettrica, green, enel, edison \\
+      Telephone and Cable & telefonia, telefonate, telefonico, chiamate, canoni, fibra, internet, ricaricabile, ricarica, cellulare, navigazione, telecom, vodafone, tim, fastweb, wind \\ \hline
     \end{tabular}
   \end{center}
   \label{table:determnistic-classifier-dict}
@@ -414,11 +412,11 @@ As already widely discussed in the articles \cite{Improvingcamera-based} and \ci
 	\label{dewarping-experiment}
 \end{figure}
 
-Moreover we tried to do the classification of the photos contained in the second dataset, which is made of bills photos with perspective distorsion and a lot of background, with Naive Bayes Classificator trained on the main dataset and without dewarping the photos. In this case we obtained an accuracy of 0.64 instead of 0.95 obtained with the same dataset but with the dewarping phase also enabled in this last case. This experiment confirm that the dewarping phase is an important task when dealing with OCR application and it can improve the perfomance in terms of accuracy of nearly 30\%.
+Moreover we tried to do the classification of the photos contained in the second dataset, which is made of bills photos with perspective distorsion and a lot of background, with Naive Bayes Classificator trained on the main dataset and without dewarping the photos. In this case we obtained an accuracy of 0.64 instead of 0.95 obtained with the same dataset but with the dewarping phase also enabled in this last case. This experiment confirm that the dewarping phase is an important task when dealing with OCR application and in that specific task it has improve the perfomance in terms of accuracy of nearly 30\%.
 
 
 \subsection{Camera taken illuminance quality}
-We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the contrast and the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase contrast and brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness and Constrast Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same.
+We have noticed during our expiremets that we have poor performances in the OCR phase if the mobile taken photos isn't correctly illuminated. Tesseract OCR, wich is the application designated for extracting the text of our bill in our application, already apply internally an image pre-processing step, trying to binarize the image for the later text extraction phase. The problem of this pre-processing step of Tesseract arise when the taken photos have a bad illumination or there are shadows present on it. Infact we could see in the example reported in figure \ref{bright-constrast-experiment} that if we take a poor illuminated photo of a bill and we print the pre-proccesing output of Tesseract we can noticed that there are completly white areas on the pre-processed photos and the binarization is inverted. For this reason if we try to increase the brightness of the image we could see that the peformance are better. Infact if we take the same image as the example but this time we increase the brightness we could notice that the pre-proccessed image of Tesseract is better, without too much area invisibles and also without the inversion of the binarization of the image. With this improvemets also the text extaction phase is more precise and accurate and it could extract all the words where before was contained in the white areas. For this reason we have inserted in the pipeline a "Brightness Enhancer" for all the mobile taken photos (the jpg format), because we have seen that also if the image is already correctly illuminated and costrasted, even if we apply the enhancer, the performance are the same. We could confirm also this hyphothesis by stating that the accuracy performance obtained in class (wich was the more problematic in terms of image illumincance) with and wothout the brightness enhancer increase from 0.94 to 0.99. We set manually the amount of brightness to be added, but it could be learned automatically with a deep learning model. Another improvement could be also increasing the contrast with an apropriate values depending on the image.
 
 \begin{figure}[h]
 	\centering
@@ -427,15 +425,10 @@ We have noticed during our expiremets that we have poor performances in the OCR 
 	\label{bright-constrast-experiment}
 \end{figure}
 
-
-\subsection{Data augmentation}
-
-TODO
-
-\subsection{Classification with Naive Bayes}
+\subsection{Machine Learning or Deterministic models?}
 \label{subsec:classification-naive-bayes}
 
-The classification strategy proposed in Section in
+The two different classification strategy proposed in Section
 \ref{subsec:classification} is not the only feasible way. There are
 many machine learning algorithms applicable over text classification:
 one over the other is Naive Bayes.
@@ -459,22 +452,41 @@ banners, disclaimers, formal opening of letters, and so on. Another
 problem we had, as described in Section \ref{sec:dataset}, is the
 problem of the headers: we can have two bills about different
 categories with same header (same user data), or bills about same
-category with different headers (different user data). This kind of
-problem cannot be easily handled with such a classifier, so at the end
-we decided to chose the deterministic classifier.
+category with different headers (different user data). This kind of problem cannot be easily handled with such a classifier, so at the end we decided to chose the deterministic classifier.
+
+We have seen in our experiment that the Naive Bayes classifier obtained a 99\% of accuracy, in all the condition, even if we dewarp the images or we brightning it. 
+
+TODO: CITARE IL TERZO DATASET E UN ATTIMO I RISULTATI OTTENUTI, POI ELIMINARLI DALLA TABELLA SOTTO
+
+\subsection{Results}
 
 The Table \ref{table:classifiers-comparison} shows a comparison
-between the the performance on an unseen dataset (described in Section
+between the the performance on the main dataset, second and the third dataset (described in Section
 \ref{sec:dataset}), for the Naive Bayes classifier, trained on our
-main dataset and the deterministic classifier.
+main dataset and the deterministic classifier. In the second dateset, we enabled and disabled the dewarphing phase to see the difference in performance with this task.
 
 \begin{table}[!h]
   \begin{center}
     \begin{tabular}{lll}
       \hline
       Classifier & Accuracy & Support \\ \hline
-      Naive Bayes & $0.65$ & $26$ \\
-      Deterministic & $0.88$ & $26$ \\ \hline
+      \textbf{Main Dataset} \\
+      \small Without dewarping phase\\
+      \; \; Naive Bayes & $0.99$ & $1047$ \\
+      \; \; Deterministic & $0.99$ & $1047$ \\ \hline
+      
+      \textbf{Second Dataset} & & \\
+      \small Without dewarping phase \\
+      \; \; Naive Bayes & $0.59$ & $129$ \\
+      \; \; Deterministic & $0.40$ & $129$ \\ 
+      
+      \small With dewarping phase \\
+      \; \; Naive Bayes & $0.98$ & $129$ \\
+      \; \; Deterministic & $0.88$ & $129$ \\ \hline
+      
+      \textbf{Third Dataset} & & \\
+      \; \; Naive Bayes & $0.8$ & $26$ \\
+      \; \; Deterministic & $0.95$ & $26$ \\ \hline
     \end{tabular}
   \end{center}
   \label{table:classifiers-comparison}
