@@ -131,15 +131,16 @@ up with some considerations about the work in Section
 During our researches, we did not found works that perform this
 particular task. However, we found interesting works about different
 aspect that we had to face when developing this work.  First of all we
-take into account the image dewarping problem, that previously has
-faced by \cite{Improvingcamera-based} with his project
-\cite{mobile-ocr}. Their proejct is based on the experiments conducted
-by \cite{recoveringhomography}.  Secondly, we had to perform text
-extact from images. In order to do that we relied on Tesseract
-\cite{Tesseract} wich is a popular open-source OCR tool developed by
-Goggle. The last major step that we had to take into account was the
+take into account the image dewarping and feature extraction problem,
+that previously treated in \cite{Korber18} and \cite{AbbasHussain17}.
+Secondly, we had to perform the optical character recognition from
+images. In order to do that we relied on Tesseract described in
+\cite{Smith07} wich is a popular open-source OCR tool developed by
+Goggle. Concrete Tesseract usage is shown in \cite{Benabderrazak20}
+and \cite{ZelicSable20}, that deal with Python and Tesseract. The
+last major step that we had to take into account was the
 classification phase, which could be performed by a Naive Bayes
-Classifier, TODO set references.
+Classifier like the one shown in \cite{ScikitTextDataTutorial}.
 
 \section{Dataset}
 \label{sec:dataset}
@@ -281,11 +282,11 @@ of a mobile camera taken photos. This includes brightness and contrast
 adjustments, dewarping, skew correction and others. The first task of
 our pipeline infact is try to recover a flatbed scanned document from
 a camera taken photos. For this task we used the work done in
-\cite{mobile-ocr} wich uses an Xcenption Neural Network
+\cite{Korber18} wich uses an Xception Neural Network
 \cite{xception_NN} to perform this task, with appreciable results
-according to the article. In figure \ref{xception-architecture} is
-reported the Xception architecture used in this application coming
-from the work done in \cite{Improvingcamera-based}. We have observed
+according to the article. In figure \ref{fig:xception-architecture} is
+reported the Xception architecture.
+We have observed
 that in some experiment, that involve the second dataset which
 consists of mobile camera taken photos of bills in extreme conditions,
 the network doesn't correctly adjust the homography of some document
@@ -298,7 +299,7 @@ Experiment section.
 \subsubsection{The Xception Neural Network}
 
 The dewarping phase is completly based on the work done in
-\cite{mobile-ocr}. Accordingly to the autor, the recovery of the
+\cite{Korber18}. Accordingly to the autor, the recovery of the
 homography of a mobile camera taken photos of a document is delegated
 to a Xception Neural Network. According to the paper \cite{xception}
 this architecture relies heavily on prior efforts in the Inception
@@ -306,10 +307,8 @@ architecture wich first demonstrated the advantages of factoring the
 convolutions into multiple branches operating successively on channels
 and then on space. It is entirely based upon the Residual Connections
 and Depthwise separable convolutions. For the Depthwise separable
-convolutions advantages we refer to the article
-\cite{https://towardsdatascience.com/a-basic-introduction-to-separable-convolutions-b99ec3102728}
-and for Residual Connections we refer to
-\cite{https://towardsdatascience.com/residual-blocks-building-blocks-of-resnet-fd90ca15d6ec}.
+convolutions advantages we refer to the article \cite{Wang18}
+and for Residual Connections we refer to \cite{Sahoo17}.
 
 \begin{comment}
 --- Depthwise separable convolutions SUMMARY ---
@@ -500,9 +499,7 @@ Classifier. See Section \ref{subsec:naive-bayes-classifier}.
 
 \subsection{Dewarping or not?}
 
-As already widely discussed in the articles
-\cite{Improvingcamera-based} and \cite{recoveringhomography} the
-dewarping phase (also the deskew phase) is essential to improve the
+The dewarping phase (also the deskew phase) is essential to improve the
 performance of Tesseract. We could confirm this fact with this
 experiment: we proccessed the same image, one time without dewarping
 it and the next time with the dewarping correction. If we highlight

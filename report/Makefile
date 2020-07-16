@@ -8,7 +8,7 @@ SRC = $(shell pwd)
 all:  # all do nothing by default
 
 .PHONY: pdf
-pdf: pdflatex pdflatex
+pdf: pdflatex bib pdflatex
 
 # ***********************************************************
 # ****** BUILD RECIPES
@@ -20,6 +20,10 @@ pdflatex:
 # read
 read:
 	evince $(MAINFILE).pdf &
+
+# bibliography
+bib:
+	bibtex ${MAINFILE}
 
 .PHONY: pdflatex bib read
 
