@@ -274,7 +274,7 @@ what following we will dive into the details of the designed pipeline.
   \label{fig:pipeline}
 \end{figure*}
 
-\subsection{Image pre-processing phase}
+\subsection{Image Preprocessing}
 
 The image preprocessing phase is in charge of adjusting all the aspect
 of a mobile camera taken photos. This includes brightness and contrast
@@ -289,7 +289,7 @@ from the work done in \cite{Improvingcamera-based}. We have observed
 that in some experiment, that involve the second dataset which
 consists of mobile camera taken photos of bills in extreme conditions,
 the network doesn't correctly adjust the homography of some document
-contained in the dataset. The last step of the image pre-processing is
+contained in the dataset. The last step of the image preprocessing is
 the correction of the brightness and constrast of the image. This is
 done because there are critical photos that could arise many problem
 for the OCR phase and this problems are be better exaplined in the
@@ -534,13 +534,13 @@ case. This experiment confirm that the dewarping phase is an important
 task when dealing with OCR application and in that specific task it
 has improve the perfomance in terms of accuracy of nearly 30\%.
 
-\subsection{Camera taken illuminance quality}
+\subsection{Camera Taken Illuminance Quality}
 
 We have noticed during our expiremets that we have poor performances
 in the OCR phase if the mobile taken photos isn't correctly
 illuminated. Tesseract OCR, wich is the application designated for
 extracting the text of our bill in our application, already apply
-internally an image pre-processing step, trying to binarize the image
+internally an image preprocessing step, trying to binarize the image
 for the later text extraction phase. The problem of this
 pre-processing step of Tesseract arise when the taken photos have a
 bad illumination or there are shadows present on it. Infact we could
