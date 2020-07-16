@@ -143,58 +143,80 @@ Classifier, TODO set references.
 
 \section{Dataset}
 \label{sec:dataset}
-When dealing with machine learning applications, in general more data we have  better are the performances obtainable by these models, so the first approach for collecting datas is searching on the web if someone has posted some dataset that are useful for our application. Unfortunately for us on the web we couldn't have find a dataset for our purposed. So we decided to collect our home bills and create 2 different dataset: a main dataset wich is used to train the final classifier, a second dataset used to test the full pipeline, including the dewarping phase.\\
 
-For the \textbf{main dataset} we gather nearly all the bills that we could find in our homes. The main dataset is made of nearly 1000 bills: the majority of these are mobile camera taken photos (usually in jpg or png format) and only few ones are flatbed scans (in pdf format). We prefered to take more mobile camera photo because it reflects the traditional use-case of our application: take a bill's photo and classify it. The categories provided in this dataset are gas, water, electricity, garbage and internet furnitures, but the application could be trained on new categories. In table \ref{dataset-table} we have repoted the summary of our dataset.
+When dealing with machine learning applications, data are a
+foundamental aspect to keep in mind: no data, no party. In fact, in
+order to get quite accurate results, a lot of data are needed. For our
+application, public domain datasets are very rare, mostly because the
+sensible data contained inside each document. For this reason, before
+starting with the ``low level'' application we had to collect the
+data.
 
+We collected two different dataset that we used to satify our needs
+and testing our application during its stages. This two dataset are
+described below.
 
-\begin{table}[!h]
-	\begin{center}
-		\begin{tabular}{lll}
-			\hline
-			category    & quantity & providers \\ \hline
-			internet    & 403      & 9         \\
-			electricity & 276      & 6         \\
-			gas         & 202      & 4         \\
-			water       & 123      & 3         \\
-			garbage     & 45       & 1         \\ \hline
-			total       & 1048     & 19        \\ \hline
-		\end{tabular}
-	\end{center}
-	\label{dataset-table}
-	\caption{Main Dataset composition}
-\end{table}
+\paragraph{Main Dataset}
+\label{par:main-dataset}
 
-In the following summer it is reported all the providers considered per category:\\
+The \emph{main dataset} is the first dataset we collected. It is
+composed by nearly one thousand bills, where the majority of them are
+camera taken photos, while a small part of them are pdfs (either
+scanned or the original file).
 
+We tried to keep images with no perspecitive distorsion or other
+effects and to exclude the background as much as possibile, because
+these corrections are made in a prevoius pipeline steps. See the full
+pipeline in Figure \ref{fig:pipeline}.  In this way we could use the
+assumption that documents are already dewarped and we could train the
+classifier without being influnced by the preprocessing steps. Even if
+we tried to keep the illuminance as good as possible, we included in
+the preprocessing phase the brightness enhancing.
+
+While the dataset could be a nice starting point, it has one big
+problem: documents do not variate so much. In fact,
 \begin{itemize}
-	\begin{samepage}
-		\item \textbf{Internet}: \\
-		 Vodafone, Wind, Tre, Wind Tre, Telecom, TIM, Tele 2, Fastweb,  Teletu
-	
-		\item \textbf{Electricity}: \\
-		Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera
-	
-		\item \textbf{Gas}:\\
-		Sorgenia, Ascotrade, Etra Energia, Hera
-	
-		\item \textbf{Water}: \\ 
-			Etra, Alto Trevigiano Servizi, Hera
-	
-		\item \textbf{Garbage}: \\
-			Savno
-	\end{samepage}
+  \item documents come from a small number of people, so headers are
+    really similar from one document to another;
+  \item providers are almost the same, because bill were collected
+    from the same local zone;
+  \item classes are umbalanced, because some type of bills are less
+    frequent than others.
 \end{itemize}
 
-Our main dataset is mainly obtained with front-taken photos of bills, and no perspecitive distorsion or other strange effects are added to the photos, also we tried to exclude the background as much as possibile, because these corrections are made in a prevoius phase with another neural-network (page-dewarping phase in the pipeline on figure \ref{fig:pipeline}) which is trained on a completely different dataset. In this way we could take the assumption that the documents are already dewarped (this tasks could be delegated with another application or could be substituded) and we are ready to train the final part of our pipeline avoiding poor performance due to other previous pre-processing phases. The pipeline used with this dataset start from the Brightness \& Contrast Enhancer, because the taken photos could have shadows or are taken in bad illumincance conditions. \\
+The Table \ref{table:main-dataset} shows the composition of our
+dataset.
 
-The \textbf{second dataset} provided consists of 129 camera taken photos of our home bills (the same as in the main dataset), but in this case they are taken with perspective distorsion, rotation and with portion of the background included in the photo. With this dataset we are able to test the full pipeline. The results obtained with this dataset and with the full pipeline are reported in the experiment section. \\
+\bgroup
+\def\arraystretch{1.3}%
+\begin{table}[!h]
+  \begin{center}
+    \begin{tabular}{|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{3cm}|}
+      \hline
+      Categories  & Number of Documents & Number of Providers & Providers \\ \hline
+      \emph{Telephone and Cable} & 403 & 9 & Vodafone, Wind, Tre, Wind Tre, Telecom, TIM, Tele 2, Fastweb, Teletu \\
+      \emph{Electricity} & 276 & 6 & Green Network, Servizio Elettrico Nazionale, Etra, Enel, Edison, Hera \\
+      \emph{Gas} & 202 & 4 & Sorgenia, Ascotrade, Etra Energia, Hera \\
+      \emph{Water} & 123 & 3 & Etra, Alto Trevigiano Servizi, Hera \\
+      \emph{Garbage} & 45 & 1 & Savno \\ \hline
+      \textbf{Total} & 1048 & 19 &  \\ \hline
+    \end{tabular}
+  \end{center}
+  \label{table:main-dataset}
+  \caption{Main Dataset composition}
+\end{table}
+\egroup
 
+\paragraph{Warped Dataset}
+\label{par:warped-dataset}
 
-\begin{comment}
-#if 0
-TODO: ELIMINARE VISTO CHE NON LO FACCIAMO FORSE We have noticed that the page-dewarping phase (wich is imported from the project mobile-ocr \cite{mobile-ocr}) have poor performances in some circumstances, so we decided to fine-tuning the nearal-network on a our specific dataset. We collected different photos about tables plot or other object that we could find in our homes. Then we applied the same approach as discussed in \cite{Improvingcamera-based} and in \cite{recoveringhomography} in the Dataset generation part to generate a synthetic dataset generation.
-\end{comment}
+The \emph{warped dataset} is instead the second dataset we collected
+consists of nearly one hundred and fifty camera taken photos of our
+home bills, as in the main dataset, but in this case they are taken
+with perspective distorsion, rotation and with parts of the
+background. With this dataset we are able to test the full
+pipeline. The results obtained with this dataset and with the full
+pipeline are reported in Section \ref{sec:experiments}. \\
 
 \section{Proposed Method}
 \label{sec:proposed-method}
