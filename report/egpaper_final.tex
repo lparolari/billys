@@ -207,7 +207,10 @@ described below.
     processable by an optical recognition tool. In order to perform
     the OCR we have to preprocess the image and rotate, resize and
     strech it.
-  	\item \textbf{Contrast/illumination correction}: also the illumination/contrast of an image can be a nasty problem for an OCR tool, as it needs a clear distinction written text and other stuff in order to perform well.
+  \item \textbf{Contrast/illumination correction}: also the
+    illumination/contrast of an image can be a nasty problem for an
+    OCR tool, as it needs a clear distinction written text and other
+    stuff in order to perform well.
   \item \textbf{Optical Character Recognition}: the OCR can be a very delicate
     point, as the application performances depends on how the OCR
     extracts data from images.
@@ -225,15 +228,22 @@ Recognition in our project because we thought that using a simple CNN
 to classify the bills could bring some problems like, what are the
 behaviuor of an CNN in front of a new unseen bill about another
 supplier. Another reason is the fact that a CNN need a lot of examples
-(huge dataset) to be trained on and because we have only "few" examples we
-prefered to try another approach. So we chose Tesseract to extrapolate
-all the text inside a bill and then classify the bill accordingly to the text extracted after a preprocessing step. In this way we think that a text classificator
-is much more stable in predicting the bill's class of a new unseen
-example, because in an unseen new bill the words extrapoleted are in
-general the same as the words extracted from the bills included in the
-main dataset. Once we have chosen to include an OCR all the rest of
-the pipeline is built considering all the major drawback already known for OCRs, like image preprocesing (page dewarping and Brightness Enhancer). Once the text of a bill is extrapolated we need to preproccess it before the final step. This part is important for excluding the frequent words like articles and verbs often used wich are not important for the final classification. In
-what following we will dive into the details of the designed pipeline.
+(huge dataset) to be trained on and because we have only "few"
+examples we prefered to try another approach. So we chose Tesseract to
+extrapolate all the text inside a bill and then classify the bill
+accordingly to the text extracted after a preprocessing step. In this
+way we think that a text classificator is much more stable in
+predicting the bill's class of a new unseen example, because in an
+unseen new bill the words extrapoleted are in general the same as the
+words extracted from the bills included in the main dataset. Once we
+have chosen to include an OCR all the rest of the pipeline is built
+considering all the major drawback already known for OCRs, like image
+preprocesing (page dewarping and Brightness Enhancer). Once the text
+of a bill is extrapolated we need to preproccess it before the final
+step. This part is important for excluding the frequent words like
+articles and verbs often used wich are not important for the final
+classification. In what following we will dive into the details of the
+designed pipeline.
 
 \begin{figure*}[h]
   \centering
@@ -249,41 +259,34 @@ of a mobile camera taken photos. This includes brightness and contrast
 adjustments, dewarping, skew correction and others. The first task of
 our pipeline infact is try to recover a flat bed scanned document from
 a camera taken photos. For this task we used the work done in
-\cite{Korber18} wich uses an Xception Neural Network
-\cite{Xception} to perform this task, with appreciable results
-according to the article. In figure \ref{fig:xception-architecture} is
-reported the Xception architecture.
-We have observed that in some experiments, that involve the warped dataset which consists of mobile camera taken photos of bills in extreme conditions,
-the network doesn't correctly adjust the homography of some documents
-contained in the dataset. But this is not so bad because the Neural network increased a lot the performances of our pipeline which are present in Experiment section. The last step of the image preprocessing is
-the correction of the brightness and constrast of the image. This is
-done because there are critical photos that could arise many problem
-for the OCR phase and this problems are be better exaplined in the
-Experiment section.
+\cite{Korber18} wich uses an Xception Neural Network \cite{Xception}
+to perform this task, with appreciable results according to the
+article. In figure \ref{fig:xception-architecture} is reported the
+Xception architecture.  We have observed that in some experiments,
+that involve the warped dataset which consists of mobile camera taken
+photos of bills in extreme conditions, the network doesn't correctly
+adjust the homography of some documents contained in the dataset. But
+this is not so bad because the Neural network increased a lot the
+performances of our pipeline which are present in Experiment
+section. The last step of the image preprocessing is the correction of
+the brightness and constrast of the image. This is done because there
+are critical photos that could arise many problem for the OCR phase
+and this problems are be better exaplined in the Experiment section.
 
 \subsubsection{The Xception Neural Network}
 
 The dewarping phase is completly based on the work done in
 \cite{Korber18}. Accordingly to the author, the recovery of the
 homography of a mobile camera taken photos of a document is delegated
-to a Xception Neural Network. As it is stated in the paper \cite{Xception}
-this architecture relies heavily on prior efforts in the Inception
-architecture wich first demonstrated the advantages of factoring the
-convolutions into multiple branches operating successively on channels
-and then on space. Also this architecture is entirely based upon the Residual Connections and Depthwise separable convolutions. For the Depthwise separable
-convolutions advantages we refer to the article \cite{Wang18}
-and for Residual Connections we refer to \cite{Sahoo17}.
-
-\begin{comment}
---- Depthwise separable convolutions SUMMARY ---
-
-unlike spatial separable convolutions (wich is used to reduce the computational complexity of a single convolution operation involving one kernel by dividing it into two smaller kernels), depthwise separable convolutions work with kernels that cannot be “factored” into two smaller kernels. The depthwise separable convolution is so named because it deals not just with the spatial dimensions, but with the depth dimension (the number of channels) as well. Similar to the spatial separable convolution, a depthwise separable convolution splits a kernel into 2 separate kernels that do two convolutions: the depthwise convolution and the pointwise convolution. We refer to this article  that exaplain better this two operations in the details with an example.
-
---- Residual Connection SUMMARY ---
-accuracy increases with increasing number of layers. But there is a limit to the number of layers added that result in accuracy improvement. So, if neural networks were universal function approximators then it should have been able to learn any simplex or complex function. But it turns out that, thanks to some problems like vanishing gradients and curse of dimensionality, if we have sufficiently deep networks, it may not be able to learn simple functions like an identity function. Now this is clearly undesirable.
-
-You can skip the training of few layers using skip-connections or residual connections. This is what we see in the image above. In fact, if you look closely, we can directly learn an identity function by relying on skip connections only. This is the exact reason why skip connections are also called as identity shortcut connections too. One solution for all the problems!
-\end{comment}
+to a Xception Neural Network. As it is stated in the paper
+\cite{Xception} this architecture relies heavily on prior efforts in
+the Inception architecture wich first demonstrated the advantages of
+factoring the convolutions into multiple branches operating
+successively on channels and then on space. Also this architecture is
+entirely based upon the Residual Connections and Depthwise separable
+convolutions. For the Depthwise separable convolutions advantages we
+refer to the article \cite{Wang18} and for Residual Connections we
+refer to \cite{Sahoo17}.
 
 The used Xception Neural Network is trained over 1.5M synthetic images
 dataset. It uses Adam optimization method in combination with the
@@ -491,16 +494,17 @@ the warped dataset, which is made of bills photos with perspective
 distorsion and a lot of background, with Naive Bayes Classificator
 trained on the main dataset and without dewarping the photos. In this
 case we obtained an accuracy of 0.64 instead of 0.95 obtained with the
-same dataset but with the dewarping phase enabled. This experiment confirm that the dewarping phase is an important
-task when dealing with OCR application and in that specific task it
-has improve the perfomance in terms of accuracy of nearly 30\%.
+same dataset but with the dewarping phase enabled. This experiment
+confirm that the dewarping phase is an important task when dealing
+with OCR application and in that specific task it has improve the
+perfomance in terms of accuracy of nearly 30\%.
 
 \subsection{Camera Taken Illuminance Quality}
 
-We have noticed during our expiremets that we could have poor performances
-in the OCR phase if the mobile taken photos isn't correctly
-illuminated. Tesseract OCR, wich is the application designated for
-extracting the text of our bills, already apply
+We have noticed during our expiremets that we could have poor
+performances in the OCR phase if the mobile taken photos isn't
+correctly illuminated. Tesseract OCR, wich is the application
+designated for extracting the text of our bills, already apply
 internally an image preprocessing step, trying to binarize the image
 for the later text extraction phase. The problem of this
 pre-processing step of Tesseract arise when the taken photos have a
@@ -509,25 +513,27 @@ see in the example reported in figure
 \ref{bright-constrast-experiment} that if we take a poor illuminated
 photo of a bill and we print the pre-proccesing output of Tesseract we
 can noticed that there are completly white areas on the pre-processed
-photos and the binarization is inverted. If we try to
-increase the brightness of the image we could see that the peformance
-are better. Infact if we take the same image as the example but this
-time we increase the brightness we could notice that the
-pre-proccessed image of Tesseract is better, without too much areas
-invisibles and also without the inversion of the binarization of the
-image. With this improvemets also the text extraction phase is more
-precise and accurate and it could extract all the words where before
-was contained in the white areas. For this reason we have inserted in
-the pipeline a "Brightness Enhancer" for all the mobile taken photos
-(the jpg format), because we have seen that also if the image is
-already correctly illuminated and costrasted, even if we apply the
-enhancer, the performance are the same. We could confirm the improvements in terms of accuracy adding this step in the pipelin by stating that the accuracy performance obtained in the water class
-(wich was the more problematic in terms of image illumincance) with
-and without the brightness enhancer increased from 0.94 to 0.99. We set
-manually the amount of brightness to be added, but it could be learned
+photos and the binarization is inverted. If we try to increase the
+brightness of the image we could see that the peformance are
+better. Infact if we take the same image as the example but this time
+we increase the brightness we could notice that the pre-proccessed
+image of Tesseract is better, without too much areas invisibles and
+also without the inversion of the binarization of the image. With this
+improvemets also the text extraction phase is more precise and
+accurate and it could extract all the words where before was contained
+in the white areas. For this reason we have inserted in the pipeline a
+"Brightness Enhancer" for all the mobile taken photos (the jpg
+format), because we have seen that also if the image is already
+correctly illuminated and costrasted, even if we apply the enhancer,
+the performance are the same. We could confirm the improvements in
+terms of accuracy adding this step in the pipelin by stating that the
+accuracy performance obtained in the water class (wich was the more
+problematic in terms of image illumincance) with and without the
+brightness enhancer increased from 0.94 to 0.99. We set manually the
+amount of brightness to be added, but it could be learned
 automatically with a deep learning model. Another improvement could be
-also increasing the contrast with an apropriate value depending on
-the illumination of image.
+also increasing the contrast with an apropriate value depending on the
+illumination of image.
 
 \begin{figure}[h]
   \centering
@@ -669,7 +675,9 @@ harder because the complexity of the pipeline: a small change on the
 contrast preprocessing phase leads to a significant change on the
 classification stage.
 
-However, we are really happy with this experience and the obtained result and we know that the work can still be improved by taking into account all the ideas and considerations made in this report.
+However, we are really happy with this experience and the obtained
+result and we know that the work can still be improved by taking into
+account all the ideas and considerations made in this report.
 
 {\small
 \bibliographystyle{ieee_fullname}
