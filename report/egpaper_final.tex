@@ -69,10 +69,10 @@ Luca Parolari\\
 Everyone, sooner or later, has to face the messy world of bills. Every
 month we get four/five or even more bills, coming from different
 providers and about different expenses, with the duty to keep them
-safe and easily available in case of need. This task can, even if can
-be quite easy, is very boring for humans. Why don't let that a
-computer do it! The main task of our application is, indeed, to put in
-order this messy world.  In this paper we present our solution to this
+safe and easily available in case of need. This task, even if quite
+easy, can be very boring for humans. Why don't let that a computer do
+it! The main task of our application is, indeed, to put in order this
+messy world.  In this paper we present our solution to this
 problem. The solution is composed by simple steps, each of them solve
 a different task like image dewarping, contrast/illumination
 augmentation, textual feature extraction, classification. These simple
@@ -85,7 +85,7 @@ steps are then combined in a pipeline which manage the whole process.
 
 The purpose of our work is to classify bills into some arbitrarily
 defined categories (a.k.a., target names or classes), that can
-fit almost all bill categories. This targets should help the user to
+fit almost every bill categories. This targets should help the user to
 better handle and organize bills for archiviation. We defined five
 classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
   Recycling} and \emph{Telephone and Cable}. For treatability we
@@ -117,17 +117,17 @@ up with some considerations about the work in Section
 
 During our researches, we did not found works that perform this
 particular task. However, we found interesting works about different
-aspect that we had to face when developing this work.  First of all we
-take into account the image dewarping and feature extraction problem,
-that previously treated in \cite{Korber18} and \cite{AbbasHussain17}.
-Secondly, we had to perform the optical character recognition from
-images. In order to do that we relied on Tesseract described in
-\cite{Smith07} wich is a popular open-source OCR tool developed by
-Google. Concrete Tesseract usage is shown in \cite{Benabderrazak20}
-and \cite{ZelicSable20}, that deal with Python and Tesseract. The
-last major step that we had to take into account was the
-classification phase, which could be performed by a Naive Bayes
-Classifier like the one shown in \cite{ScikitTextDataTutorial}.
+aspect that we had to face when developing this work.  First of all,
+we take into account the image dewarping and feature extraction
+problem, that were previously treated in \cite{Korber18} and
+\cite{AbbasHussain17}.  Secondly, we had to perform the optical
+character recognition from images. In order to do that we relied on
+Tesseract, described in \cite{Smith07}, which is a popular open-source
+OCR tool developed by Google. Concrete Tesseract usage is shown in
+\cite{Benabderrazak20} and \cite{ZelicSable20}, that deal with Python
+and Tesseract. The last major step that we had to take into account
+was the classification phase, which could be performed by a Naive
+Bayes Classifier like the one shown in \cite{ScikitTextDataTutorial}.
 
 \section{Dataset}
 \label{sec:dataset}
@@ -166,7 +166,7 @@ problem: documents do not variate so much. In fact,
 \begin{itemize}
   \item documents come from a small number of people, so headers are
     really similar from one document to another;
-  \item providers are almost the same, because bill were collected
+  \item providers are almost the same, because bills were collected
     from the same local zone;
   \item classes are umbalanced, because some type of bills are less
     frequent than others.
@@ -198,13 +198,14 @@ dataset.
 \paragraph{Warped Dataset}
 \label{par:warped-dataset}
 
-The \emph{warped dataset} is instead the second dataset we collected and it 
-consists of nearly one hundred and fifty camera taken photos of our
-home bills, as in the main dataset, but in this case they are taken
-with perspective distorsion, rotation and with parts of the
+The \emph{warped dataset} is instead the second dataset we collected
+and it consists of nearly one hundred and fifty camera taken photos of
+our home bills, as in the main dataset, but in this case they are
+taken with perspective distorsion, rotation and with parts of the
 background. With this dataset we are able to test the full
 pipeline. The results obtained with this dataset and with the full
-pipeline are reported in Subsection \ref{subsec:naive-bayes-classifier}.
+pipeline are reported in Subsection
+\ref{subsec:naive-bayes-classifier}.
 
 \section{Proposed Method}
 \label{sec:proposed-method}
@@ -215,14 +216,14 @@ structured pipeline with the aim to face some of the main problems,
 described below.
 
 \begin{itemize}
-  \item \textbf{Image dewarping}: camera taken image are usually not directly
-    processable by an optical recognition tool. In order to perform
-    the OCR we have to preprocess the image and rotate, resize and
-    strech it.
+  \item \textbf{Image dewarping}: camera taken image are usually not
+    directly processable by an optical recognition tool. In order to
+    perform the OCR we have to preprocess the image and rotate, resize
+    and strech it.
   \item \textbf{Contrast/illumination correction}: also the
     illumination/contrast of an image can be a nasty problem for an
-    OCR tool, as it needs a clear distinction written text and other
-    stuff in order to perform well.
+    OCR tool, as it needs a clear distinction between written text and
+    other stuff in the image.
   \item \textbf{Optical Character Recognition}: the OCR can be a very delicate
     point, as the application performances depends on how the OCR
     extracts data from images.
@@ -235,27 +236,16 @@ described below.
 \end{itemize}
 
 To resolve all these problems we prososed the pipeline reported in
-figure \ref{fig:pipeline}. We choose to add an Optical Character
-Recognition in our project because we thought that using a simple CNN
-to classify the bills could bring some problems like, what are the
-behaviuor of an CNN in front of a new unseen bill about another
-supplier. Another reason is the fact that a CNN need a lot of examples
-(huge dataset) to be trained on and because we have only ``few''
-examples we prefered to try another approach. So we chose Tesseract to
-extrapolate all the text inside a bill and then classify the bill
-accordingly to the text extracted after a preprocessing step. In this
-way we think that a text classificator is much more stable in
-predicting the bill's class of a new unseen example, because in an
-unseen new bill the words extrapoleted are in general the same as the
-words extracted from the bills included in the main dataset regarding the same class. Once we
-have chosen to include an OCR all the rest of the pipeline is built
-considering all the major drawback already known for OCRs, like image
-preprocesing (page dewarping and brightness enhancing). Once the text
-of a bill is extrapolated we need to preproccess it before the final
-step. This part is important for excluding the frequent words like
-articles, numbers and verbs often used wich are not important for the final
-classification. In what following we will dive into the details of the
-designed pipeline.
+Figure \ref{fig:pipeline}.
+
+We choose to use an Optical Character Recognition instead of a
+Convolutional Neural Network because the classification mostly depends
+on the content of the document, while the global image shape does not
+matter so much.  Another reason for this choice, is that a CNN needs a
+lot of examples to be trained on: collecting such a dataset would have
+been a big problem Once we have chosen to include an OCR tool, all the
+rest of the pipeline is built considering the major drawback known for
+OCRs (page dewarping and brightness enhancing).
 
 \begin{figure*}[!ht]
   \centering
@@ -304,8 +294,8 @@ synthetic images. It uses the \emph{Adam} optimization method in
 combination with the \emph{L1-loss} to predict the four corner points
 of the distorted image. Then given these corners, the homography
 matrix $H$ is computed using a \emph{Direct Linear Transform} (DLT)
-algorithm. The network is made of thirtysix convolution layers and a
-total of more than twenty million trainable parameter.
+algorithm. The network is made of thirtysix convolution layers and
+more than twenty million trainable parameter.
 
 \begin{figure}[!ht]
   \centering
@@ -354,7 +344,7 @@ steps really matters, so we ordered them for better performances.
     and the OCR may also miss them, so we decided to exclude them from
     the principle and to represent words with their non accented
     versions.
-  \item \textbf{Remove punctuaction}: also the punctuaction do not really
+  \item \textbf{Remove punctuation}: also the punctuaction do not really
     matters, and indeed cannot say anything on the class of the bill
     that we are considering, so we decided to remove them.
   \item \textbf{Remove numbers}: bills can be full of numbers and we
@@ -386,7 +376,7 @@ steps really matters, so we ordered them for better performances.
     they can be analysed as a single item, identified by the word's
     lemma, or dictionary form.\footnote{\href{
         https://en.wikipedia.org/wiki/Lemmatisation}{
-        https://en.wikipedia.org/wiki/Lemmatisation}}. With
+        https://en.wikipedia.org/wiki/Lemmatisation}} With
     this step, indeed, we tried to group words together in order to
     simplify the classification phase. However, we noticed that this
     step do not improve the performance and it can also produce worst
@@ -462,7 +452,7 @@ vocabulary: this could be a valid option! See the Section
 
 Obviously the deterministic classifier is not the only way to perform
 the classification task, in fact, we experimented also a Naive Bayes
-Classifier. See Section \ref{subsec:naive-bayes-classifier}.
+Classifier. See Subsection \ref{subsec:naive-bayes-classifier}.
 
 \bgroup
 \def\arraystretch{1.3}%
@@ -479,7 +469,7 @@ Classifier. See Section \ref{subsec:naive-bayes-classifier}.
     \end{tabular}
   \end{center}
   \label{table:determnistic-classifier-dict}
-  \caption{Example of one vocabulary for the deterministic classifier.}
+  \caption{A vocabulary for the deterministic classifier.}
 \end{table}
 \egroup
 
@@ -553,7 +543,7 @@ documents and pdfs.
 We could empirically confirm those improvements with some
 tests. Theese tests were conduced on the water class (wich was the
 more problematic in terms of image illuminance): without brightness
-enhancing the accuracy was $94\%$, while with it accuracy was $0.99$.
+enhancing the accuracy was $94\%$, while with it accuracy was $99\%$.
 
 Many more improvements can be obtained tweaking illuminance an
 contrast augmentation. Also, another improvement, as reported in
@@ -593,9 +583,9 @@ Anyway, as Naive Bayes usually performs very well we tried an
 implementation tuned with a grid search strategy. Then we evaluated
 its model performances on another dataset composed by unseen bills
 with different headers and providers, and we discovered that it
-performs almost the same as the deterministic classifier.  However,
+performs almost the same as the deterministic classifier.  However, we
 must underline that this third dataset was composed by very very few
-data, so the results are not reliable.
+images, so the results are not reliable.
 
 \paragraph{Results}
 
@@ -630,6 +620,11 @@ difference in performance with this task.
   \caption{Accuracy comparison between Naive Bayes classifier and
     deterministic classifier.}
 \end{table}
+
+As we can see, the dewarping phase really matters. Howevere, as we
+have particular dataset without a good variance, we can hypotize that
+the two behave in the same way, but Naive Bayes can also recognize non
+relevant words and do a good job even with the warped dataset.
 
 \section{Future Works}
 \label{sec:future-works}
