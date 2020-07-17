@@ -67,16 +67,16 @@ Luca Parolari\\
 
 \begin{abstract}
 Everyone, sooner or later, has to face the messy world of bills. Every
-month we get four/five or even more bills, coming from different
+month we receive four/five or even more bills, coming from different
 providers and about different expenses, with the duty to keep them
 safe and easily available in case of need. This task can, even if can
 be quite easy, is very boring for humans. Why don't let that a
 computer do it! The main task of our application is, indeed, to put in
 order this messy world.  In this paper we present our solution to this
-problem. The solution is composed by simple steps, each of them solve
+problem. The solution is composed by simple steps, each of them solving
 a different task like image dewarping, contrast/illumination
 augmentation, textual feature extraction, classification. These simple
-steps are then combined in a pipeline which manage the whole process.
+steps are then combined in a pipeline which manages the whole process.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
@@ -90,9 +90,9 @@ better handle and organize bills for archiviation. We defined five
 classes: \emph{Water}, \emph{Electricity}, \emph{Gas}, \emph{Trash and
   Recycling} and \emph{Telephone and Cable}. For treatability we
 assigned to each class an integer from $0$ to $4$,
-respectively. Bills are the very foundamental component of the whole
+respectively. Bills are the very fundamental component of the whole
 application. A bill, or an invoice, is a commercial document issued by
-a seller to a buyer, relating to a sale transaction and indicating the
+a seller to a buyer, related to a sale transaction and indicating the
 products, quantities, and agreed prices for products or services the
 seller had provided the buyer. In pratical terms, for us, a bill can
 be a pdf file or an image (even a camera taken image) to process.
@@ -106,7 +106,7 @@ Section \ref{sec:proposed-method}, we show adopted solutions and
 describe smart ideas we used in order to solve the core problem. We
 then explore the pipeline and all its components in order to present
 full details of what we have done. In Section \ref{sec:experiments},
-we also show experiments and fails we have done before getting nice
+we also show experiments and fails occured before getting acceptable
 results. We conclude then with future works and possible enhancements
 that for concreteness we excluded from this presentation and we wrap
 up with some considerations about the work in Section
@@ -117,12 +117,12 @@ up with some considerations about the work in Section
 
 During our researches, we did not found works that perform this
 particular task. However, we found interesting works about different
-aspect that we had to face when developing this work.  First of all we
-take into account the image dewarping and feature extraction problem,
-that previously treated in \cite{Korber18} and \cite{AbbasHussain17}.
+aspects that we had to face when developing this work.  First of all, we
+take into account the image dewarping and feature extraction problems,
+that were previously treated in \cite{Korber18} and \cite{AbbasHussain17}.
 Secondly, we had to perform the optical character recognition from
 images. In order to do that we relied on Tesseract described in
-\cite{Smith07} wich is a popular open-source OCR tool developed by
+\cite{Smith07} which is a popular open-source OCR tool developed by
 Google. Concrete Tesseract usage is shown in \cite{Benabderrazak20}
 and \cite{ZelicSable20}, that deal with Python and Tesseract. The
 last major step that we had to take into account was the
@@ -133,42 +133,40 @@ Classifier like the one shown in \cite{ScikitTextDataTutorial}.
 \label{sec:dataset}
 
 When dealing with machine learning applications, data are a
-foundamental aspect to keep in mind: no data, no party. In fact, in
+fundamental aspect to keep in mind: no data, no party. In fact, in
 order to get quite accurate results, a lot of data are needed. For our
-application, public domain datasets are very rare, mostly because the
-sensible data contained inside each document. For this reason, before
+application, public domain datasets are very rare, since the concerned data are sensible. For this reason, before
 starting with the ``low level'' application we had to collect the
 data.
 
-We collected two different dataset that we used to satify our needs
-and testing our application during its stages. This two dataset are
+We collected two different datasets that we used to satisfy our needs
+and test our application during its stages. This two datasets are
 described below.
 
 \paragraph{Main Dataset}
 \label{par:main-dataset}
 
-The \emph{main dataset} is the first dataset we collected. It is
-composed by nearly one thousand bills, where the majority of them are
+The \emph{main dataset} is the first we collected. It is
+composed by nearly one thousand bills, the majority of them being
 camera taken photos, while a small part of them are pdfs (either
 scanned or the original file).
 
-We tried to keep images with no perspecitive distorsion or other
-effects and to exclude the background as much as possibile, because
-these corrections are made in a previous pipeline steps. See the full
+For what concerns images, we tried to avoid perspective distorsions, other
+effects and background as much as possible, because
+these corrections are made in previous pipeline steps. See the full
 pipeline in Figure \ref{fig:pipeline}.  In this way we could use the
 assumption that documents are already dewarped and we could train the
-classifier without being influnced by the preprocessing steps. Even if
-we tried to keep the illuminance as good as possible, we included in
-the preprocessing phase the brightness enhancing.
+classifier without being influenced by the preprocessing steps. Even if
+we tried to keep the illuminance as good as possible, we included the brightness enhancing in the preprocessing phase.
 
-While the dataset could be a nice starting point, it has one big
+While the dataset could be a starting point, it has one big
 problem: documents do not variate so much. In fact,
 \begin{itemize}
   \item documents come from a small number of people, so headers are
     really similar from one document to another;
-  \item providers are almost the same, because bill were collected
+  \item providers are almost the same, because bills were collected
     from the same local zone;
-  \item classes are umbalanced, because some type of bills are less
+  \item classes are unbalanced, because some type of bills are less
     frequent than others.
 \end{itemize}
 
@@ -201,8 +199,8 @@ dataset.
 The \emph{warped dataset} is instead the second dataset we collected and it 
 consists of nearly one hundred and fifty camera taken photos of our
 home bills, as in the main dataset, but in this case they are taken
-with perspective distorsion, rotation and with parts of the
-background. With this dataset we are able to test the full
+with perspective distortion, rotation and parts of the
+background. This dataset allowed us to test the full
 pipeline. The results obtained with this dataset and with the full
 pipeline are reported in Subsection \ref{subsec:naive-bayes-classifier}.
 
@@ -210,50 +208,50 @@ pipeline are reported in Subsection \ref{subsec:naive-bayes-classifier}.
 \label{sec:proposed-method}
 
 The task itself is very complex and can lead to a messy and
-unmantainable solution. For this reason we develop a robust and well
+unmaintainable solution. For this reason we developed a robust and well
 structured pipeline with the aim to face some of the main problems,
 described below.
 
 \begin{itemize}
   \item \textbf{Image dewarping}: camera taken image are usually not directly
     processable by an optical recognition tool. In order to perform
-    the OCR we have to preprocess the image and rotate, resize and
-    strech it.
-  \item \textbf{Contrast/illumination correction}: also the
-    illumination/contrast of an image can be a nasty problem for an
-    OCR tool, as it needs a clear distinction written text and other
+    the OCR we had to preprocess rotate, resize and
+    strech the image.
+  \item \textbf{Contrast/illumination correction}: the
+    illumination/contrast of an image can also be a nasty problem for an
+    OCR tool, as it needs a clear distinction between written text and other
     stuff in order to perform well.
   \item \textbf{Optical Character Recognition}: the OCR can be a very delicate
     point, as the application performances depends on how the OCR
     extracts data from images.
-  \item \textbf{Text preprocessing}: a huge amout of details can be extracted
+  \item \textbf{Text preprocessing}: a huge amount of details can be extracted
     from the OCR, but surely not all of them are relevant for
     application's purposes. We need to disregard them for good results.
-  \item \textbf{Feature classification}: at the end, our need is to classify
+  \item \textbf{Feature classification}: in the end, our need is to classify
     the given object. This is a complex task as document data can be
     very different and very similar at the same time.
 \end{itemize}
 
-To resolve all these problems we prososed the pipeline reported in
-figure \ref{fig:pipeline}. We choose to add an Optical Character
+In order to resolve all these problems, we proposed the pipeline reported in
+figure \ref{fig:pipeline}. We chose to add an Optical Character
 Recognition in our project because we thought that using a simple CNN
-to classify the bills could bring some problems like, what are the
-behaviuor of an CNN in front of a new unseen bill about another
-supplier. Another reason is the fact that a CNN need a lot of examples
+to classify the bills could bring some problems. For instance, what is the
+behavior of a CNN in front of a new unseen bill about another
+supplier? Another reason is the fact that a CNN needs a lot of examples
 (huge dataset) to be trained on and because we have only ``few''
-examples we prefered to try another approach. So we chose Tesseract to
+examples we preferred to try another approach. So we chose Tesseract to
 extrapolate all the text inside a bill and then classify the bill
-accordingly to the text extracted after a preprocessing step. In this
+according to the text extracted after a preprocessing step. In this
 way we think that a text classificator is much more stable in
 predicting the bill's class of a new unseen example, because in an
-unseen new bill the words extrapoleted are in general the same as the
+unseen new bill the words extrapolated are in general the same as the
 words extracted from the bills included in the main dataset regarding the same class. Once we
-have chosen to include an OCR all the rest of the pipeline is built
-considering all the major drawback already known for OCRs, like image
-preprocesing (page dewarping and brightness enhancing). Once the text
-of a bill is extrapolated we need to preproccess it before the final
+have chosen to include an OCR, all the remaining pipeline is built
+considering all the major drawbacks already known for OCRs, like image
+preprocessing (page dewarping and brightness enhancing). Once the text
+of a bill is extrapolated we need to preprocess it before the final
 step. This part is important for excluding the frequent words like
-articles, numbers and verbs often used wich are not important for the final
+articles, numbers and verbs often used which are not important for the final
 classification. In what following we will dive into the details of the
 designed pipeline.
 
@@ -266,18 +264,17 @@ designed pipeline.
 
 \subsection{Image Preprocessing}
 
-The image preprocessing is a crucial point in our application. Its
-main responsability is to adjust all the aspects of a mobile camera
+Image preprocessing is a crucial point in our application. Its
+main responsibility is to adjust all the aspects of a mobile camera
 taken photo. This includes enhancing brightness and contrast,
 dewarping, skew correction and others.
 
-The first in order to recover a nice image is the dewarp. For this
-task we started from the work done in \cite{Korber18} wich uses an
-Xception Neural Network (see \cite{Xception}) to perform this task,
+The first step in order to recover a correct image is dewarping it. For this
+task we started from the work done in \cite{Korber18} which uses an
+Xception Neural Network (see \cite{Xception}) to perform it,
 with appreciable results according to the article. In Subsection
 \ref{subsec:xception-nn-architecture} we describe the Xception Neural
-Network architecture while the Figure \ref{fig:xception-architecture}
-pictorially shows it.
+Network architecture while Figure \ref{fig:xception-architecture} shows the different layers on it.
 
 The second step is contrast/illumination adjustment. A good
 illumination of an image is crucial for a good OCR result. Refer to
@@ -287,25 +284,23 @@ details.
 \subsubsection{The Xception Neural Network}
 \label{subsec:xception-nn-architecture}
 
-The dewarping phase is completly based on the work done in
-\cite{Korber18}. Accordingly to the author, the recovery of the
-homography of a mobile camera taken photos of a document is delegated
-to a Xception Neural Network. The paper \cite{Xception} describes this
-architecture ans shows how it heavily relies on prior efforts in the
+The dewarping phase is completely based on the work done in
+\cite{Korber18}. The Xception Neural Network is in charge of recovering the homography of a mobile camera taken photos of a document. The paper \cite{Xception} describes this
+architecture and shows how it heavily relies on prior efforts in the
 Inception architecture which first demonstrated the advantages of
 factoring the convolutions into multiple branches operating
-successively on channels and then on space. Also, this architecture is
+successively on channels and then on space. Plus, this architecture is
 entirely based upon the Residual Connections and Depthwise separable
-convolutions. This aspects are treated in \cite{Sahoo17} and
+convolutions. These aspects are treated in \cite{Sahoo17} and
 \cite{Wang18}, respectively.
 
 The used Xception Neural Network is trained over $1.5$ million
 synthetic images. It uses the \emph{Adam} optimization method in
 combination with the \emph{L1-loss} to predict the four corner points
-of the distorted image. Then given these corners, the homography
+of the distorted image. Then, given these corners, the homography
 matrix $H$ is computed using a \emph{Direct Linear Transform} (DLT)
 algorithm. The network is made of thirtysix convolution layers and a
-total of more than twenty million trainable parameter.
+total of more than twenty million trainable parameters.
 
 \begin{figure}[!ht]
   \centering
@@ -314,85 +309,84 @@ total of more than twenty million trainable parameter.
   \label{fig:xception-architecture}
 \end{figure}
 
-We empirically noticed a sort of bug in the network: it do not dewarp
+We empirically noticed a sort of bug in the network: it does not dewarp
 images with extreme conditions of contrast/illumination, but this is
-not really a problem as the exepriment in Subsection
-\ref{subse:dewarping-or-not} shows.
+not big deal as shown in the experiment depicted Subsection
+\ref{subse:dewarping-or-not}.
 
 \subsection{Optical Character Recognition}
 
-The OCR task can be a very complex part of the pipeline. So, instead
+The OCR task can be a very complex part of the pipeline. Therefore, instead
 of focusing on already developed tools we decided to delegate the OCR
 task to Tesseract. Tesseract is an open-source, optical character
-recognition tool developed at Google and it source code is freely
+recognition tool developed by Google and its source code is freely
 available on GitHub under the Apache License, Version 2.0.
 
-Tesseract works out-of-the-box with sveral languages, included
-italian. So, as the good realiability of Tesseract we decided to used
-it as a black-box and focus on more delicated tasks.
+Tesseract works out-of-the-box with several languages, included
+italian. So, give the good reliability of Tesseract, we decided to use
+it as a black-box and focus on more delicate tasks.
 
 \subsection{Text Preprocessing}
 
 The text preprocessing phase is an important task that may occur
-immediatly after the textual features extraction from images. The aim
+immediately after the textual features extraction from images. The aim
 of this task is mainly to preprocess the plain text coming from images
-in order to remove non-relevant features: pratically, it transforms the
+in order to remove non-relevant features: practically, it transforms the
 text into a more digestible form so that machine learning algorithms
 can perform better.
 
 The implementation of this step follows some very simple ideas for
 text preprocessing. Indeed, we just normalize the text into its base
-form. The inner pipeline for this phase is composed by atomic steps,
+form. The inner pipeline for this phase is composed by atomic steps, as
 described below. Note that for this task, the execution order of some
 steps really matters, so we ordered them for better performances.
 
 \begin{enumerate}
-  \item \textbf{To lowercase}: the first step for the text normalization is to
+  \item \textbf{To lowercase}: the first step for text normalization is to
     remove differences from uppercase and lowercase letters.
-  \item \textbf{Remove accented characters}: accented chars, specially in
+  \item \textbf{Remove accented characters}: accented chars, especially in
     italian, are often used. However for our task they are not relevant
     and the OCR may also miss them, so we decided to exclude them from
     the principle and to represent words with their non accented
     versions.
-  \item \textbf{Remove punctuaction}: also the punctuaction do not really
-    matters, and indeed cannot say anything on the class of the bill
+  \item \textbf{Remove punctuation}: also the punctuation doesn not really
+    matter, and indeed cannot say anything on the class of the bill
     that we are considering, so we decided to remove them.
   \item \textbf{Remove numbers}: bills can be full of numbers and we
-    can find them under many forms, as, for example, dates,
-    identifiers, furniture comsumption, and so on. However, also
+    can find them under many forms: dates,
+    identifiers, furniture consumption, and so on. However, also
     numbers cannot say anything about the bill class, so they were
     removed and replaced with the keyword \codeinline{<num>}, which
-    instead can be more informative as when vectorized in bag of words
-    its numerosity is associated with the the number of numbers in a
-    bill. For this case, we decied to do not completely remove the
+    instead can be more informative as, when vectorized in bag of words,
+    its numerosity is associated with the amount of numbers in a
+    bill. For this case, we decided to do not completely remove the
     information but to keep only its condensed version.
   \item \textbf{Remove stopwords}: in order to obtain the most informative
-    textual representation of a bill we had to remove also
-    insignificat words like stopwords. Stopwords are words that can be
-    used frequently in phrases, so in the context of representing the
-    bill class, an article isn't informative. Stopwords are remove
+    textual representation of a bill, we had to remove also
+    insignificant words like stopwords. Stopwords are words that can be
+    frequently used in sentences, so when representing the
+    bill's class, an article isn't informative. Stopwords are removed
     with the help of the \emph{Natural Language Toolkit}, available as
-    a python package: \emph{nltk}. NLTK provieds a collection of
+    a python package: \emph{nltk}. NLTK provides a collection of
     stopwords, that can be easily downloaded with
     \codeinline{nltk.download('stopwords')}, and then, with
     \codeinline{nltk.corpus.stopwords.words('italian')} we can obtain the
     localized version of the stopwords and perform the removal.
-  \item \textbf{Remove shortwords}: By means of experiments we discovered that
-    the OCR phase, under certain (bad) conditions, returns parts of
+  \item \textbf{Remove shortwords}: By means of experiments, we discovered    that the OCR phase, under certain (bad) conditions, returns parts of
     words, usually very smaller. We empirically found that by removing
-    this ``shortwords'', we could improve performances.
+    these ``shortwords'', we could improve performances.
   \item \textbf{Lemmatize}: lemmatisation (or lemmatization) in linguistics is
-    the process of grouping together the inflected forms of a word so
+    the process of grouping together the inflected forms of a word, so
     they can be analysed as a single item, identified by the word's
     lemma, or dictionary form.\footnote{\href{
         https://en.wikipedia.org/wiki/Lemmatisation}{
-        https://en.wikipedia.org/wiki/Lemmatisation}}. With
+        https://en.wikipedia.org/wiki/Lemmatisation}}. Thanks
     this step, indeed, we tried to group words together in order to
     simplify the classification phase. However, we noticed that this
-    step do not improve the performance and it can also produce worst
+    step does not improve the performance and it can also produce worse
     results as it tries to group wrong words retrieved from the OCR.
   \item \textbf{Tokenize}: at the end of the preprocessing we create a list of
-    words (Tokenization), that can be easily represented by in a
+    words (Tokenization), that can be easily represented in a
     vectorized form.
 \end{enumerate}
 
@@ -402,7 +396,7 @@ steps really matters, so we ordered them for better performances.
 The features classification is itself a core step, needed for the real
 bills classification. Indeed, the pipeline steps before the features
 classification can be viewed as a giant image preprocessing step, with
-the goal to preprare a nice subset of features to be used in the
+the goal to prepare a nice subset of features to be used in the
 classifier.
 
 Regardless of the chosen implementation for a classifier, textual
@@ -420,11 +414,11 @@ following strategy:
     where $j$ is the index of word $w$ in the dictionary.
 \end{itemize}
 
-Once we have the bag of words we can analyze words occurency in order
-to extract frequencies. We cannot rely on occurrencies because longer
+Once we have the bag of words, we can analyze words' occurency in order
+to extract frequencies. We cannot rely on occurrences because longer
 documents will have higher average count values than shorter
 documents, even though they might talk about the same topics. To avoid
-these potential discrepancies it suffices to divide the number of
+these potential discrepancies, it is enough to divide the number of
 occurrences of each word in a document by the total number of words in
 the document: these new features are called \emph{Term
   Frequencies}. Another refinement on top of \emph{tf} is to downscale
@@ -433,13 +427,13 @@ therefore less informative than those that occur only in a smaller
 portion of the corpus. This downscaling is called \emph{Term Frequency
   times Inverse Document Frequency} (\emph{tf-idf} for brevity).
 
-Now, we are ready to train the classifier in order to predict a bill
+Now we are ready to train the classifier in order to predict a bill
 category. For completing this task we proposed two strategies: a
 ``deterministic'' classifier and a Naive Bayes classifier. The
 deterministic classifier is based on the simple idea that each
 document category has a small subset of words that are very relevant
-for the classification. Indeed, we have arbitrary defined the
-vocabulary that specifies what words we expect to find in a document
+for the classification. So, we have arbitrarily defined the
+vocabulary that specifies which words we expect to find in a document
 based on its category. Then, the classifier applies a simple
 algorithm, which works as follows:
 
@@ -454,14 +448,14 @@ algorithm, which works as follows:
 \end{itemize}
 
 The Figure \ref{table:determnistic-classifier-dict} shows an example
-of the vocabulary (italian version) we used to perform bills
-classification, how we can see, it is very small and effective.  On
+of the vocabulary (italian version) we adopted to perform bills
+classification. As we can see, it is very small and effective.  On
 the contrary, one could think to automatically generate the
-vocabulary: this could be a valid option! See the Section
+vocabulary: this could be a valid option! See Section
 \ref{sec:future-works}.
 
 Obviously the deterministic classifier is not the only way to perform
-the classification task, in fact, we experimented also a Naive Bayes
+the classification task: in fact we experimented also a Naive Bayes
 Classifier. See Section \ref{subsec:naive-bayes-classifier}.
 
 \bgroup
@@ -489,22 +483,22 @@ Classifier. See Section \ref{subsec:naive-bayes-classifier}.
 \subsection{Dewarping or not?}
 \label{subse:dewarping-or-not}
 
-Camera taken images can present lot of irregularities like small
-rotation, perspective distortion and so on. However, even if this
+Camera taken images can present a lot of irregularities like small
+rotation, perspective distortion and so on. However, even if these
 small defects are not a problem for a human, they can be for an
 automatic tool. In order to test the effectiveness of the dewarping
-phase, we proccessed the same images two times: the first without
+phase, we processed the same images twice: the first without
 dewarping and the second with the dewarping. The results were quite
-surprising. Indeed, watching at the ``boxed'' image we could notice
+surprising. Looking at the ``boxed'' image we could notice
 that the OCR extracted many more words from the image without
 dewarping than the one with, but the plain output was not so precise
 and contained a lot of blank characters. An example is shown at Figure
 \ref{dewarping-experiment}. In that picture we can see two ``boxed''
-images, where the green boxes represents OCR detected words. The left
-image is not dewarped while the right is. From the left image we could
-extract $708$ words, while for the right one only $491$. However, the
-text extracted from the left image contains a lot of black characters
-and the precision of read words is low, while the right image has a
+images, where the green boxes represent OCR detected words. The left
+image is not dewarped while the right is. From the left-hand image we could
+extract $708$ words, while for the right-hand one only $491$. However, the
+text extracted from the left-hand image contains a lot of blank characters
+and the precision of read words is low, while the right-hand image has a
 very high precision and fewer blank characters.
 
 \begin{figure}[b]
@@ -514,29 +508,29 @@ very high precision and fewer blank characters.
   \label{dewarping-experiment}
 \end{figure}
 
-Moreover we tried to do the classification of the photos contained in
+Moreover we tried to do the classification of photos contained in
 the warped dataset and with a Naive Bayes Classificator trained on the
-main dataset without dewarping the photos. In this case we obtained an
+main dataset without dewarping them. In this case we obtained an
 accuracy of $64\%$ instead of $95\%$ obtained with the same dataset but
 with the dewarping phase enabled.
 
 This experiment empirically confirms that the dewarping phase is an
 important task when dealing with OCR tools and in that specific task
-it has improved the perfomance by $30\%$.
+it has improved the performance by $30\%$.
 
 \subsection{Camera Taken Illuminance Quality}
 \label{subsec:camera-taken-illuminance-quality}
 
 A good illumination on images is often the key for a good
-OCR. Tesseract, the designated tool for OCR, already preprocess images
-internally, and it tries to binarize it for the text extraction phase.
+OCR. Tesseract - the designated tool for OCR - already preprocesses images
+internally, and it tries to binarize them for the text extraction phase.
 The problem of this preprocessing step arises when the taken photos
-have a bad illumination or there are shadows. An example of this
-behaviour is shown in the Figure
+have a bad illumination or there present shadows on them. An example of this
+behavior is shown in Figure
 \ref{bright-constrast-experiment}. The first part of the example shows
-as the binarization acts on bad illuminated images.  Instead, if we
+how binarization acts on bad illuminated images. Instead, if we
 increase brightness we can see that the binarization is better as it
-do not throw away most of the text. With this improvemets also the
+does not throw away most of the text. With this improvements also the
 text extraction performances increase.
 
 \begin{figure}[!ht]
@@ -546,27 +540,27 @@ text extraction performances increase.
   \label{bright-constrast-experiment}
 \end{figure}
 
-After theese consideration we introduced the \emph{brightness
+After these consideration we introduced the \emph{brightness
   enhancing} step in our pipeline for all images, excluding scanned
 documents and pdfs.
 
-We could empirically confirm those improvements with some
-tests. Theese tests were conduced on the water class (wich was the
+We could empirically confirm those improvements with through some
+tests. These tests were conducted on the water class (which was the
 more problematic in terms of image illuminance): without brightness
 enhancing the accuracy was $94\%$, while with it accuracy was $0.99$.
 
-Many more improvements can be obtained tweaking illuminance an
+Many more improvements can be obtained tweaking illuminance and
 contrast augmentation. Also, another improvement, as reported in
 Section \ref{sec:future-works}, could be a system that automatically
-set the illumination gain for each image.
+sets the illumination gain for each image.
 
 \subsection{Naive Bayes Classifier}
 \label{subsec:naive-bayes-classifier}
 
 The deterministic classification strategy proposed in Section
 \ref{subsec:classification} is not the only feasible way. There are
-many machine learning algorithms applicable with text classification:
-one over the other is Naive Bayes.
+many machine learning algorithms suitable for text classification,
+one of them being Naive Bayes.
 
 The Naive Bayes classifier, unlike the deterministic classifier, comes
 from the family of simple probabilistic classifiers based on applying
@@ -578,33 +572,33 @@ we need the Multinomial Naive Bayes classifier, as we have to predict
 multiple classes, not only $0$ or $1$.
 
 Due to the definition of our problem, this type of classifier
-is probabily an overkill: it bases the predicted target on all the
+is probably an overkill: it bases the predicted target on all the
 text provided to the classifier. Under our domain, documents are very
 likely to be similar for most of their parts and we have only few
-interesting words for each document that differs. Also, bills contains
-huge amount of non-relevant data for our application like marketing
+interesting words for each document that differs. Also, bills contain
+huge amounts of non-relevant data for our application like marketing
 banners, disclaimers, formal opening of letters, and so on. Another
 problem we had, as described in Section \ref{sec:dataset}, is the
 problem of the headers: we can have two bills about different
 categories with same header (same user data), or bills about same
 category with different headers (different user data).
 
-Anyway, as Naive Bayes usually performs very well we tried an
+Anyway, as Naive Bayes usually performs very well, we tried an
 implementation tuned with a grid search strategy. Then we evaluated
 its model performances on another dataset composed by unseen bills
 with different headers and providers, and we discovered that it
 performs almost the same as the deterministic classifier.  However,
-must underline that this third dataset was composed by very very few
+this third dataset was composed by very very few
 data, so the results are not reliable.
 
 \paragraph{Results}
 
-The Table \ref{table:classifiers-comparison} shows a comparison
-between the performance of the main and the warped dataset (described
+Table \ref{table:classifiers-comparison} shows a comparison
+between the performance of the main and the warped datasets (described
 in Section \ref{sec:dataset}), for the Naive Bayes classifier trained
 on our main dataset and the deterministic classifier. In the warped
-dateset, we enabled and disabled the dewarping phase to see the
-difference in performance with this task.
+dataset, we enabled and disabled the dewarping phase to see the
+differences in performance with this task.
 
 \begin{table}[!h]
   \begin{center}
@@ -635,39 +629,39 @@ difference in performance with this task.
 \label{sec:future-works}
 
 The task offers a infinite list of related works that can be done in
-order to improve results and extends our ideas. We list below some of
+order to improve results and extends our ideas. We list below some of the
 possible future works.
 
 \begin{itemize}
   \item Enhanced text preprocessing. Our text preprocessing is not
-    sophisticaded, instead it is composed by the necessary steps in
+    sophisticated, instead it is composed by the necessary steps in
     order to get a decent classifier. An enhance on text preprocessing
     could be the header removal. Under the bills domain, headers are
-    composed of extremenly non-relevant data, that could be discarded
+    composed of extremely non-relevant data, that could be discarded
     with a vocabulary of names or something similar.
   \item Automatic vocabulary building for deterministic
-    classifier. For concreteness, we manually built the vocabulary
+    classifier. For concreteness, we manually adopted the vocabulary
     used in the deterministic classifier, instead one could let the
     machine generate it. In fact, our approach has some drawbacks: the
     application tends to be static, but mainly, the vocabulary can
     miss some relevant words. A well configured vocabulary automatic
-    building can surely perform better wrt the manual one.
+    building can surely perform better w.r.t. the manual one.
   \item Automatic contrast/illumination gain. Our illumination
     enhancing technique is based on a parameter, namely \emph{gain},
-    which is manually setted before the whole pipeline execution and
+    which is manually set before the whole pipeline execution and
     is responsible for the contrast/illumination augmentation. An
     interesting improvement could be a system which can decide itself
-    how much gain use for the contrast/illuminanche augmentation. In
+    how much gain use for the contrast/illuminance augmentation. In
     fact, we noticed that with the wrong gain values performances can
     be very poor and surely a single value for each sample provided
     is not the best choice.
-  \item Enhanced Dewarping. As we shown in the Table
+  \item Enhanced Dewarping. As we shown in Table
     \ref{table:classifiers-comparison}, a good image dewarp can really
     help in classification. Indeed, another improvement could be a
-    fine tuning for the dewarp system. The goal is obtain a network
-    which is really good in finding sheet of paper corners and return
+    fine tuning for the dewarp system. The goal is to obtain a network
+    which is really good in finding sheets of paper corners and return
     them for the real dewarping. An idea is to train a neural network
-    on a relatively huge dataset that contains image where in the
+    on a relatively huge dataset that contains images where in the
     foreground there is a sheet of paper (even with perspective
     distorsion and rotation) and in the foreground tables
     textures. This would help a lot as the dewarp performs very bad
@@ -679,22 +673,21 @@ possible future works.
 \label{sec:conclusion}
 
 From this experience we can first of all conclude that data are the
-real core of nowdays applications, specially for the machine learning
+real core of nowadays applications, especially for the machine learning
 ones: having a good dataset is, we would say, the hardest part of the
-whole project, bacause all results depends on the data you have. We
+whole project, because all results depend on the data you have. We
 also learned a lot about image preprocessing and feature extraction
 from images: the only fact that a simple rotation or perspective
 distortion can catastrophically change what features can the OCR
-extract, was very desturbing. We spent a lot of time on image
+extract, was very disturbing. We spent a lot of time on image
 preprocessing as in a concrete context users do not pay much attention
-on the way they make photos. Another part where we dedicated lot of
-time was the classification part. In fact, that part was one of the
-harder because the complexity of the pipeline: a small change on the
+on the way they make photos. Another part where we dedicated a lot of
+time was the classification part, one of the harder since the complexity of the pipeline: a small change on the
 contrast preprocessing phase leads to a significant change on the
 classification stage.
 
-However, we are really happy with this experience and the obtained
-result and we know that the work can still be improved by taking into
+Nonetheless, we are really happy with this experience and the obtained
+results and we know that the work can still be improved by taking into
 account all the ideas and considerations made in this report.
 
 The project is available also on GitHub:
