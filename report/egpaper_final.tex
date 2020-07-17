@@ -247,13 +247,13 @@ accordingly to the text extracted after a preprocessing step. In this
 way we think that a text classificator is much more stable in
 predicting the bill's class of a new unseen example, because in an
 unseen new bill the words extrapoleted are in general the same as the
-words extracted from the bills included in the main dataset. Once we
+words extracted from the bills included in the main dataset regarding the same class. Once we
 have chosen to include an OCR all the rest of the pipeline is built
 considering all the major drawback already known for OCRs, like image
 preprocesing (page dewarping and brightness enhancing). Once the text
 of a bill is extrapolated we need to preproccess it before the final
 step. This part is important for excluding the frequent words like
-articles and verbs often used wich are not important for the final
+articles, numbers and verbs often used wich are not important for the final
 classification. In what following we will dive into the details of the
 designed pipeline.
 
